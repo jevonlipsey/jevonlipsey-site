@@ -1,0 +1,50 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('thoughts');
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout title={`${post.data.title} | Jevon Lipsey`} description={post.data.summary}>
+  <article class="space-y-8">
+    <div class="space-y-3">
+      <a href="/thoughts" class="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors inline-block">
+        &larr; all writing
+      </a>
+
+      <div class="flex items-center gap-3 font-mono text-xs text-zinc-500">
+        <time datetime={post.data.date.toISOString()}>
+          {post.data.date.toISOString().slice(0, 10)}
+        </time>
+        <span>&bull;</span>
+        <div class="flex items-center gap-1.5">
+          {post.data.tags.map((tag) => (
+            <span class="text-zinc-400">#{tag}</span>
+          ))}
+        </div>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+        {post.data.title}
+      </h1>
+
+      <p class="text-base text-zinc-400 leading-relaxed italic border-l-2 border-border/80 pl-3">
+        {post.data.summary}
+      </p>
+    </div>
+
+    <!-- Article Content -->
+    <div class="border-t border-border/40 pt-6 space-y-4 text-sm text-zinc-300 leading-relaxed">
+      <Content />
+    </div>
+  </article>
+</Layout>

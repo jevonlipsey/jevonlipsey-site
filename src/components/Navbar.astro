@@ -1,0 +1,45 @@
+---
+const currentPath = Astro.url.pathname;
+
+const navLinks = [
+  { label: 'Research', href: '/research' },
+  { label: 'Demos', href: '/demos' },
+  { label: 'Writing', href: '/thoughts' },
+  { label: 'About', href: '/about' },
+];
+---
+
+<header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur-sm">
+  <div class="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between text-sm">
+    <a href="/" class="font-medium text-foreground hover:opacity-80 transition-opacity">
+      Jevon Lipsey
+    </a>
+
+    <nav class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+      {
+        navLinks.map((item) => {
+          const isActive = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href));
+          return (
+            <a
+              href={item.href}
+              class={`px-2.5 py-1 rounded transition-colors ${
+                isActive
+                  ? 'text-foreground font-medium bg-muted/80'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {item.label}
+            </a>
+          );
+        })
+      }
+      <a
+        href="/cv.pdf"
+        target="_blank"
+        class="ml-1 px-2.5 py-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+      >
+        CV &nearr;
+      </a>
+    </nav>
+  </div>
+</header>

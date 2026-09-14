@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import BibtexButton from '../components/BibtexButton';
+
+const publications = await getCollection('research');
+const sortedPubs = publications.sort((a, b) => b.data.year - a.data.year);
+---
+
+<Layout title="Research | Jevon Lipsey" description="Publications and manuscripts in Human-Robot Interaction, neurosymbolic AI, and redistricting.">
+  <div class="space-y-10">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Research &amp; Publications</h1>
+      <p class="text-sm text-zinc-400">
+        Peer-reviewed publications, student abstracts, and manuscripts under review.
+      </p>
+    </div>
+
+    <div class="space-y-10">
+      {sortedPubs.map((pub) => (
+        <article class="space-y-2 border-b border-border/40 pb-8 last:border-0">
+          <div class="font-mono text-xs text-zinc-500">
+            {pub.data.year} &bull; {pub.data.venue}
+            {pub.data.status === 'in-review' && (
+              <span class="ml-2 text-zinc-400 font-mono text-[11px]">(Under Review)</span>
+            )}
+          </div>
+
+          <h2 class="text-base font-medium text-foreground">
+            <a href={`/research/${pub.id}`} class="hover:underline underline-offset-4">
+              {pub.data.title}
+            </a>
+          </h2>
+
+          <p class="text-sm text-zinc-400 leading-snug">
+            {pub.data.authors.map((author, index) => (
+              <span>
+                {author === 'Jevon Lipsey' ? (
+                  <strong class="font-semibold text-zinc-200">{author}</strong>
+                ) : (
+                  <span>{author}</span>
+                )}
+                {index < pub.data.authors.length - 1 && ', '}
+              </span>
+            ))}
+          </p>
+
+          <p class="text-sm text-zinc-400 leading-relaxed pt-1">
+            {pub.data.abstract}
+          </p>
+
+          <div class="flex items-center gap-3 pt-1 text-xs font-mono text-zinc-500">
+            <a href={`/research/${pub.id}`} class="hover:text-zinc-200 transition-colors">
+              [read paper summary]
+            </a>
+            {pub.data.pdf && (
+              <a href={pub.data.pdf} target="_blank" rel="noreferrer" class="hover:text-zinc-200 transition-colors">
+                [pdf]
+              </a>
+            )}
+            {pub.data.code && (
+              <a href={pub.data.code} target="_blank" rel="noreferrer" class="hover:text-zinc-200 transition-colors">
+                [code]
+              </a>
+            )}
+            {pub.data.bibtex && (
+              <BibtexButton client:load bibtex={pub.data.bibtex} title={pub.data.title} />
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</Layout>

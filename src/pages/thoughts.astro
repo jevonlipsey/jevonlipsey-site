@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('thoughts');
+const sortedPosts = posts
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+---
+
+<Layout title="Writing | Jevon Lipsey" description="Field notes on robotics, computing ethics, and software engineering.">
+  <div class="space-y-10">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Writing</h1>
+      <p class="text-sm text-zinc-400">
+        Essays, notes, and observations on HRI, research methodology, and systems.
+      </p>
+    </div>
+
+    <div class="space-y-8">
+      {sortedPosts.map((post) => (
+        <article class="space-y-2 border-b border-border/40 pb-6 last:border-0">
+          <div class="flex items-baseline justify-between gap-4">
+            <h2 class="text-base font-medium text-foreground">
+              <a href={`/thoughts/${post.id}`} class="hover:underline underline-offset-4">
+                {post.data.title}
+              </a>
+            </h2>
+            <span class="font-mono text-xs text-zinc-500 whitespace-nowrap">
+              {post.data.date.toISOString().slice(0, 10)}
+            </span>
+          </div>
+
+          <p class="text-sm text-zinc-400 leading-relaxed">
+            {post.data.summary}
+          </p>
+
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-2 font-mono text-xs text-zinc-500">
+              {post.data.tags.map((tag) => (
+                <span>#{tag}</span>
+              ))}
+            </div>
+            <a href={`/thoughts/${post.id}`} class="text-xs font-mono text-zinc-400 hover:text-white transition-colors">
+              read note &rarr;
+            </a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</Layout>

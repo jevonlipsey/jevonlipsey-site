@@ -1,23 +1,54 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
-</html>
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
+const {
+  title = 'Jevon Lipsey',
+  description = 'Ph.D. Student in Human-Robot Interaction at Colorado School of Mines (MIRRORLab). Researching social robotics, neurosymbolic AI, and computational redistricting.',
+} = Astro.props;
+
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@jevonlipsey" />
+  </head>
+  <body class="bg-background text-foreground flex flex-col min-h-screen">
+    <Navbar />
+
+    <main class="flex-1 w-full max-w-3xl mx-auto px-6 py-12 md:py-16">
+      <slot />
+    </main>
+
+    <footer class="border-t border-border/40 py-8 text-xs text-muted-foreground">
+      <div class="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <span>&copy; {new Date().getFullYear()} Jevon Lipsey</span>
+        </div>
+        <div class="flex items-center gap-5">
+          <a href="https://github.com/jevonlipsey" target="_blank" rel="noreferrer" class="hover:text-foreground transition-colors">GitHub</a>
+          <a href="https://scholar.google.com" target="_blank" rel="noreferrer" class="hover:text-foreground transition-colors">Google Scholar</a>
+          <a href="mailto:jevon_lipsey@mines.edu" class="hover:text-foreground transition-colors">Email</a>
+          <a href="/cv.pdf" target="_blank" class="hover:text-foreground transition-colors">CV</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

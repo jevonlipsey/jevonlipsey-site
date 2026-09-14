@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const systems = [
+  {
+    title: 'Pocket8 (iOS PICO-8 Wrapper)',
+    tech: ['WebAssembly', 'Swift', 'Vue.js', 'Capacitor'],
+    desc: 'Officially licensed PICO-8 mobile companion app in collaboration with Lexaloffle Games, earning 6,000+ downloads. Features Emscripten boot sequence hooks to bridge WebAssembly with iOS file systems and compressed memory snapshot quicksaving.',
+    link: 'https://github.com/jevonlipsey',
+  },
+  {
+    title: 'Ocean Sweep: Ubiquitous Computing Game',
+    tech: ['Three.js', 'Google MediaPipe', 'Micro:bit', 'Web Serial API'],
+    desc: '3D ubiquitous computing ocean plastic cleanup game driven simultaneously by AI webcam hand gesture recognition and a physical Micro:bit accelerometer steering wheel.',
+    link: 'https://github.com/jevonlipsey',
+  },
+  {
+    title: 'Total Community Preservation (TCP) Pipeline',
+    tech: ['Python', 'GeoPandas', 'GerryChain MCMC', 'NetworkX'],
+    desc: 'Computational redistricting pipeline intersecting Census VTDs with citizen-submitted COI dual graphs across Colorado legislative chambers, evaluating metric tradeoffs across 20M+ MCMC steps.',
+    link: 'https://github.com/jevonlipsey',
+  },
+  {
+    title: 'FeatherWeight',
+    tech: ['FastAPI', 'Python', 'Vue.js', 'SQLite', 'Docker'],
+    desc: 'Full-stack application ranking birding hotspots and predicting observation likelihoods by scraping and modeling eBird distributions.',
+    link: 'https://github.com/jevonlipsey',
+  },
+];
+---
+
+<Layout title="Demos & Systems | Jevon Lipsey" description="Interactive systems, WebGL experiments, and ubiquitous computing by Jevon Lipsey.">
+  <div class="space-y-12">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Systems &amp; Demos</h1>
+      <p class="text-sm text-zinc-400">
+        Interactive software systems, WebGL experiments, and hardware interfaces.
+      </p>
+    </div>
+
+    <!-- Software Systems List -->
+    <div class="space-y-8">
+      <div class="space-y-6">
+        {systems.map((item) => (
+          <div class="border-b border-border/40 pb-6 last:border-0">
+            <div class="flex items-baseline justify-between gap-4 mb-1">
+              <h3 class="text-base font-medium text-foreground">
+                {item.title}
+              </h3>
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noreferrer"
+                class="font-mono text-xs text-zinc-500 hover:text-zinc-200 transition-colors shrink-0"
+              >
+                source &rarr;
+              </a>
+            </div>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-3">
+              {item.desc}
+            </p>
+            <div class="flex flex-wrap gap-2">
+              {item.tech.map((t) => (
+                <span class="font-mono text-xs text-zinc-400 bg-muted/60 px-2 py-0.5 rounded">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</Layout>
