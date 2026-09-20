@@ -213,6 +213,8 @@ export default function ImmersiveScene() {
       const dark = document.documentElement.classList.contains("dark");
       const background = dark ? 0x000000 : 0xeae7e1;
       fog.color.setHex(background);
+      // transparent clear (alpha 0): the page background shows through the canvas,
+      // and CSS handles the dark/light themes cleanly on its own
       renderer.setClearColor(background, 0);
       ambient.color.setHex(dark ? 0xffffff : 0xfff1df);
       ambient.intensity = dark ? 1.2 : 1.5;
@@ -241,7 +243,7 @@ export default function ImmersiveScene() {
       const isPortrait = aspect < 1.0;
       const targetScale = shortViewport ? 0.9 : isPortrait ? 1.4 : 1.75;
       framingGroup.scale.setScalar(targetScale);
-      const targetY = shortViewport ? 0.04 : isPortrait ? -0.2 : 0.04;
+      const targetY = shortViewport ? 0.04 : isPortrait ? -0.05 : 0.04;
       framingGroup.position.set(modelOffsetX, targetY, 0);
       camera.aspect = aspect;
       const fitWidth =
@@ -769,7 +771,7 @@ export default function ImmersiveScene() {
       framingGroup.position.x = modelOffsetX;
       framingGroup.position.y = damp(
         framingGroup.position.y,
-        reduced ? 0 : (isPortrait ? -0.2 : 0.04) + scrollYOffset,
+        reduced ? 0 : (isPortrait ? -0.05 : 0.04) + scrollYOffset,
         delta,
         4,
       );

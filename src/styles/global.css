@@ -203,18 +203,32 @@ button { cursor: pointer; }
   font-size: clamp(4rem, 11vw, 9.5rem);
   margin: 0 0 8px -0.06em;
   user-select: none;
-  background: none;
+  /* pure math layer: any shadow/filter/backdrop forces Chromium to composite
+     a solid bounding box instead of the glyphs */
+  background: transparent !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
 }
-/* exclusion gives the metallic x-ray invert; white stays in BOTH themes so the
-   blend turns light backgrounds into dark ink instead of painting a box */
-.hero-title {
-  color: #ffffff;
-  mix-blend-mode: exclusion;
+/* keep the layer sterile in every theme; color/blend live in the split rules */
+.dark .hero-title,
+:root:not(.dark) .hero-title {
+  text-shadow: none !important;
+  filter: none !important;
 }
 .hero-copy { position: relative; }
 .hero-bio { max-width: 34ch; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.6; color: var(--muted-foreground); pointer-events: auto; }
+.hero-bio {
+  /* seamless knockout halo: page-colored shadows lift the small text off the
+     gray mesh that drifts behind it while scrolling */
+  text-shadow:
+    0 0 4px var(--background),
+    0 0 12px var(--background),
+    0 2px 24px var(--background);
+}
 .hero-bio strong { color: var(--foreground); font-weight: 500; }
 .hero-links { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 18px; font: 12px var(--font-mono); pointer-events: auto; }
 .hero-links a {
@@ -222,6 +236,9 @@ button { cursor: pointer; }
   align-items: center;
   min-height: 44px;
   color: var(--muted-foreground);
+  text-shadow:
+    0 0 4px var(--background),
+    0 0 12px var(--background);
   transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), color 0.18s ease;
 }
 .hero-links a:hover,
@@ -230,28 +247,37 @@ button { cursor: pointer; }
   color: var(--foreground);
 }
 .robot-stage {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
   z-index: 10;
-  overflow: visible;
+  overflow: hidden;
 }
-@media (min-width: 768px) {
-  .robot-stage {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 10;
-    overflow: hidden;
-  }
+
+/* =========================================
+   BASE / LIGHT MODE
+   canvas is beige, text sits in front as solid dark ink (no blend math)
+   ========================================= */
+.hero-title {
+  z-index: 20; /* text always in front */
+  color: #111111; /* dark ink */
+  mix-blend-mode: normal; /* no blend math in light mode */
 }
+
+/* =========================================
+   DARK MODE
+   canvas is black, text sits in front as white exclusion x-ray
+   ========================================= */
+.dark .hero-title {
+  color: #ffffff;
+  mix-blend-mode: exclusion;
+}
+/* .hero-copy stays z-30 in both themes so the bio/links float above the canvas */
 .robot-canvas {
   position: absolute;
   inset: 0;
@@ -484,9 +510,9 @@ button { cursor: pointer; }
   .site-header nav { gap: 14px; }
   .site-header nav a { font-size: 10px; letter-spacing: 0; }
   .hardware-switch { padding: 0; }
-  .hero-section { flex-direction: column; align-items: stretch; justify-content: flex-start; min-height: 100svh; }
-  .hero-copy { order: 3; padding-block: 0 36px; }
-  .hero-title { order: 2; font-size: clamp(56px, 15vw, 92px); line-height: 0.95; margin-bottom: 16px; }
+  .hero-section { justify-content: space-between; padding-top: 38svh; padding-bottom: 8svh; min-height: 100svh; }
+  .hero-copy { padding-block: 0; margin-top: auto; }
+  .hero-title { font-size: clamp(56px, 15vw, 92px); line-height: 0.95; margin-bottom: 0; }
   .hero-bio { max-width: 42ch; font-size: 15px; }
   .hero-links { margin-top: 16px; gap: 8px 22px; }
   .research-intro { grid-template-columns: 1fr; gap: 20px; padding-bottom: 0; }
