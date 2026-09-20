@@ -1,45 +1,48 @@
 ---
 const currentPath = Astro.url.pathname;
-
 const navLinks = [
-  { label: 'Research', href: '/research' },
-  { label: 'Demos', href: '/demos' },
-  { label: 'Writing', href: '/thoughts' },
-  { label: 'About', href: '/about' },
+  { label: 'research', href: '/research' },
+  { label: 'demos', href: '/demos' },
+  { label: 'writing', href: '/thoughts' },
 ];
 ---
 
-<header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur-sm">
-  <div class="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between text-sm">
-    <a href="/" class="font-medium text-foreground hover:opacity-80 transition-opacity">
-      Jevon Lipsey
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="avatar-logo" aria-label="Jevon Lipsey home">
+      <img src="/avatar.svg" alt="Jevon Lipsey" width="30" height="30" class="pixel-avatar" />
     </a>
-
-    <nav class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-      {
-        navLinks.map((item) => {
-          const isActive = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href));
-          return (
-            <a
-              href={item.href}
-              class={`px-2.5 py-1 rounded transition-colors ${
-                isActive
-                  ? 'text-foreground font-medium bg-muted/80'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {item.label}
-            </a>
-          );
-        })
-      }
-      <a
-        href="/cv.pdf"
-        target="_blank"
-        class="ml-1 px-2.5 py-1 rounded text-muted-foreground hover:text-foreground transition-colors"
-      >
-        CV &nearr;
-      </a>
+    <nav aria-label="Main navigation">
+      {navLinks.map((item) => (
+        <a href={item.href} aria-current={currentPath.startsWith(item.href) ? 'page' : undefined}>
+          {item.label}
+        </a>
+      ))}
     </nav>
+    <button id='theme-toggle' class='hardware-switch' type='button' role='switch' aria-label='Toggle theme' aria-checked='true'>
+      <span class='switch-housing' aria-hidden='true'><span class='switch-lever'></span></span>
+    </button>
   </div>
 </header>
+
+<script>
+  const button = document.getElementById('theme-toggle');
+  function syncTheme() {
+    const dark = document.documentElement.classList.contains('dark');
+    button?.setAttribute('aria-checked', String(dark));
+  }
+  function setTheme(dark: boolean) {
+    document.documentElement.classList.toggle('dark', dark);
+    syncTheme();
+    document.dispatchEvent(new Event('themechange'));
+  }
+  syncTheme();
+  button?.addEventListener('click', () => {
+    const dark = !document.documentElement.classList.contains('dark');
+    setTheme(dark);
+    try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch {}
+  });
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'theme') setTheme(event.newValue !== 'light');
+  });
+</script>

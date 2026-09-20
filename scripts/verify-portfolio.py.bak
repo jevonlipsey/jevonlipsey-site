@@ -1,0 +1,182 @@
+import argparse
+import json
+from pathlib import Path
+
+from playwright.sync_api import sync_playwright
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--url', default='http://127.0.0.1:4322')
+parser.add_argument('--output', required=True)
+args = parser.parse_args()
+output = Path(args.output)
+assert output.is_dir()
+errors = []
+warnings = []
+checks = []
+
+AUDIT_SCRIPT = '''
+window.heroAudit = { draws: 0, shaders: [], failures: [], fades: [] };
+const proto = WebGL2RenderingContext.prototype;
+const compile = proto.compileShader;
+proto.compileShader = function(shader) {
+  compile.call(this, shader);
+  const source = this.getShaderSource(shader);
+  if (source.includes('printShade')) window.heroAudit.shaders.push('halftone');
+  if (!this.getShaderParameter(shader, this.COMPILE_STATUS)) window.heroAudit.failures.push(this.getShaderInfoLog(shader));
+};
+for (const name of ['drawElements', 'drawArrays']) {
+  const original = proto[name];
+  proto[name] = function(...args) { window.heroAudit.draws++; return original.apply(this, args); };
+}
+'''
+
+
+def observe(page):
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    page.on('console', lambda message: errors.append(message.text) if message.type == 'error' else warnings.append(message.text) if message.type == 'warning' else None)
+    page.on('response', lambda response: errors.append(f'{response.status} {response.url}') if response.status >= 400 else None)
+
+
+def ready(page):
+    page.goto(args.url, wait_until='networkidle')
+    page.wait_for_selector('.robot-stage[data-status="ready"]', timeout=30000)
+    page.wait_for_timeout(800)
+
+
+def screenshot(page, name, full=False):
+    page.screenshot(path=str(output / f'{name}.png'), full_page=full)
+
+
+def no_overflow(page):
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.url
+
+
+def touch_swipe(page, start, end):
+    session = page.context.new_cdp_session(page)
+    session.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': start[0], 'y': start[1]}]})
+    for step in range(1, 11):
+        x = start[0] + (end[0] - start[0]) * step / 10
+        y = start[1] + (end[1] - start[1]) * step / 10
+        session.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': x, 'y': y}]})
+        page.wait_for_timeout(20)
+    session.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+    page.wait_for_timeout(400)
+    session.detach()
+
+
+with sync_playwright() as playwright:
+    browser = playwright.chromium.launch()
+    context = browser.new_context(viewport={'width': 1440, 'height': 1000})
+    context.add_init_script(AUDIT_SCRIPT)
+    page = context.new_page()
+    page.clock.install()
+    observe(page)
+    ready(page)
+    no_overflow(page)
+    assert page.evaluate('heroAudit.shaders.length') > 0
+    assert page.evaluate('heroAudit.failures') == []
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == 'rgb(0, 0, 0)'
+    assert page.locator('.analog-grain').evaluate('(e) => getComputedStyle(e).opacity') == '0.04'
+    screenshot(page, 'desktop-dark', True)
+    checks.append('ceramic shaders compiled; dark background and grain verified')
+
+    page.locator('#theme-toggle').click()
+    page.wait_for_timeout(400)
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == 'rgb(234, 231, 225)'
+    assert page.locator('#theme-toggle').get_attribute('aria-checked') == 'false'
+    screenshot(page, 'desktop-light', True)
+    page.reload(wait_until='networkidle')
+    page.wait_for_selector('.robot-stage[data-status="ready"]')
+    assert page.evaluate("localStorage.getItem('theme')") == 'light'
+    checks.append('theme changes live and persists across reload')
+    page.locator('#theme-toggle').focus()
+    page.keyboard.press('Space')
+    assert page.locator('#theme-toggle').get_attribute('aria-checked') == 'true'
+    page.keyboard.press('Space')
+    assert page.locator('#theme-toggle').get_attribute('aria-checked') == 'false'
+    page.mouse.click(650, 100)
+
+    # a stationary hover must keep ownership even beyond the idle-tour deadline.
+    page.locator('.hero-links a[href*="github"]').hover()
+    page.clock.fast_forward(31000)
+    assert page.locator('.robot-canvas').get_attribute('data-motion-mode') == 'GAZE'
+    page.mouse.move(650, 100)
+    page.clock.fast_forward(31000)
+    assert page.locator('.robot-canvas').get_attribute('data-motion-mode') == 'SHOWCASE'
+    page.clock.run_for(1900)
+    screenshot(page, 'showcase-back')
+    page.clock.run_for(4900)
+    assert page.locator('.robot-canvas').get_attribute('data-motion-mode') == 'GAZE'
+    page.clock.fast_forward(31000)
+    assert page.locator('.robot-canvas').get_attribute('data-motion-mode') == 'SHOWCASE'
+    page.mouse.move(900, 350)
+    assert page.locator('.robot-canvas').get_attribute('data-motion-mode') == 'GAZE'
+    page.mouse.down()
+    page.mouse.move(1080, 350, steps=8)
+    page.mouse.up()
+    page.clock.run_for(1000)
+    checks.append('stationary hero hover suppresses tour; full tour completes; movement interrupts immediately; drag works')
+
+    # exercise the native citation dialog and keyboard dismissal.
+    page.get_by_role('button', name='[bibtex]', exact=True).first.click()
+    assert page.get_by_role('dialog').is_visible()
+    page.keyboard.press('Escape')
+    assert not page.get_by_role('dialog').is_visible()
+    checks.append('citation dialog opens and closes with escape')
+    page.evaluate("document.querySelector('.site-footer').scrollIntoView({behavior: 'instant'})")
+    page.clock.run_for(500)
+    draws = page.evaluate('heroAudit.draws')
+    page.clock.run_for(1000)
+    assert page.evaluate('heroAudit.draws') == draws
+    checks.append('offscreen WebGL rendering pauses')
+
+    for route in ['/research', '/demos', '/thoughts', '/about', '/research/sweepless-dreams', '/thoughts/starting-phd-mirrorlab']:
+        page.goto(args.url + route, wait_until='networkidle')
+        no_overflow(page)
+        assert page.locator('h1').count() == 1
+        assert page.locator('#theme-toggle').get_attribute('aria-checked') == 'false'
+    checks.append('reading routes render with persistent light theme')
+
+    mobile = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    mobile.add_init_script(AUDIT_SCRIPT)
+    phone = mobile.new_page()
+    observe(phone)
+    ready(phone)
+    no_overflow(phone)
+    screenshot(phone, 'mobile-dark', True)
+    assert phone.locator('.robot-canvas').evaluate('(e) => getComputedStyle(e).touchAction') == 'pan-y'
+    touch_swipe(phone, (100, 250), (280, 250))
+    assert phone.evaluate('scrollY') < 10
+    touch_swipe(phone, (200, 350), (200, 120))
+    assert phone.evaluate('scrollY') > 50
+    phone.evaluate('scrollTo(0, 0)')
+    phone.wait_for_timeout(700)
+    phone.locator('#theme-toggle').tap()
+    screenshot(phone, 'mobile-light', True)
+    checks.append('mobile horizontal drag isolated from native vertical scrolling; both themes render')
+    for width, height in [(320, 640), (768, 1024), (1024, 768), (844, 390)]:
+        phone.set_viewport_size({'width': width, 'height': height})
+        phone.wait_for_timeout(250)
+        no_overflow(phone)
+        screenshot(phone, f'viewport-{width}')
+    checks.append('320, 390, 768, 844 landscape, 1024, and 1440 widths have no horizontal overflow')
+
+    calm = browser.new_context(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce')
+    calm.add_init_script(AUDIT_SCRIPT)
+    still = calm.new_page()
+    observe(still)
+    ready(still)
+    still.wait_for_timeout(1000)
+    draws = still.evaluate('heroAudit.draws')
+    still.wait_for_timeout(1000)
+    assert still.evaluate('heroAudit.draws') == draws
+    still.locator('#theme-toggle').click()
+    still.wait_for_timeout(500)
+    assert still.evaluate('heroAudit.draws') > draws
+    checks.append('reduced-motion rendering sleeps at rest and wakes for theme changes')
+    browser.close()
+
+report = {'checks': checks, 'errors': errors, 'warnings': sorted(set(warnings))}
+print(json.dumps(report, indent=2))
+assert not errors, errors

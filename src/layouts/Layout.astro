@@ -14,7 +14,7 @@ import Navbar from '../components/Navbar.astro';
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="dark bg-background selection:bg-foreground selection:text-background">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -29,26 +29,39 @@ import Navbar from '../components/Navbar.astro';
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:creator" content="@jevonlipsey" />
+
+    <script is:inline>
+      (function () {
+        var stored = null;
+        try {
+          stored = localStorage.getItem('theme');
+        } catch {}
+        var dark = stored ? stored === 'dark' : true;
+        document.documentElement.classList.toggle('dark', dark);
+
+        window.addEventListener('storage', (e) => {
+          if (e.key === 'theme') {
+            document.documentElement.classList.toggle('dark', e.newValue === 'dark');
+            document.dispatchEvent(new Event('themechange'));
+          }
+        });
+      })();
+    </script>
   </head>
-  <body class="bg-background text-foreground flex flex-col min-h-screen">
+  <body
+    class="bg-background text-foreground flex flex-col min-h-[100dvh] overflow-x-hidden antialiased font-sans"
+  >
+    <a class="skip-link" href="#main-content">skip to content</a>
+    <div class="analog-grain" aria-hidden="true"></div>
     <Navbar />
 
-    <main class="flex-1 w-full max-w-3xl mx-auto px-6 py-12 md:py-16">
+    <main id="main-content" class:list={['page-shell', { 'home-shell': Astro.url.pathname === '/' }]} tabindex="-1">
       <slot />
     </main>
 
-    <footer class="border-t border-border/40 py-8 text-xs text-muted-foreground">
-      <div class="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <span>&copy; {new Date().getFullYear()} Jevon Lipsey</span>
-        </div>
-        <div class="flex items-center gap-5">
-          <a href="https://github.com/jevonlipsey" target="_blank" rel="noreferrer" class="hover:text-foreground transition-colors">GitHub</a>
-          <a href="https://scholar.google.com" target="_blank" rel="noreferrer" class="hover:text-foreground transition-colors">Google Scholar</a>
-          <a href="mailto:jevon_lipsey@mines.edu" class="hover:text-foreground transition-colors">Email</a>
-          <a href="/cv.pdf" target="_blank" class="hover:text-foreground transition-colors">CV</a>
-        </div>
-      </div>
+    <footer class="site-footer">
+      <span>&copy; {new Date().getFullYear()} jevon lipsey</span>
+      <a href="/about" class="ink-bleed-link">about &amp; background ↗</a>
     </footer>
   </body>
 </html>

@@ -4,50 +4,19 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="About | Jevon Lipsey" description="About Jevon Lipsey, Ph.D. student at Colorado School of Mines MIRRORLab.">
   <div class="space-y-8">
-    <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">About</h1>
-      <p class="text-sm text-zinc-400">
-        Background, research context, and curriculum vitae.
-      </p>
+    <div class="space-y-4">
+      <h1 class="font-semibold">About</h1>
+      <p class="text-muted-foreground">Background, research context, and curriculum vitae.</p>
     </div>
-
-    <div class="space-y-6 text-sm text-zinc-300 leading-relaxed">
-      <p>
-        I am a Computer Science Ph.D. student at Colorado School of Mines in the <strong class="text-white font-medium">MIRROЯLab</strong>, advised by <strong class="text-white font-medium">Dr. Tom Williams</strong>.
-      </p>
-
-      <p>
-        My research centers on <strong class="text-white font-medium">Human-Robot Interaction (HRI)</strong> to design equitable, community-grounded social robotic systems. I am motivated by how robots interface with marginalized communities—specifically exploring unhoused populations—and how we can formulate interactive protocols that respect privacy, preserve human dignity, and avoid paternalistic defaults.
-      </p>
-
-      <p>
-        Prior to Mines, I completed my B.A. in Computer Science at <strong class="text-white font-medium">Colorado College</strong> (GPA 3.92, Steven Janke Award for Outstanding Achievement in CS, Euclid Scholar). My undergraduate research spanned neurosymbolic AI (published at AAAI-25 and PMLR 2025), computational redistricting using MCMC Markov chains, and cultural humanities research for Oxford University Press examining Midwestern Hip Hop subcultures and intersectional feminist frameworks.
-      </p>
-
-      <div class="pt-4 border-t border-border/40 flex flex-wrap items-center gap-4 text-sm font-mono">
-        <a
-          href="/cv.pdf"
-          target="_blank"
-          class="text-zinc-200 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-300 transition-colors"
-        >
-          Curriculum Vitae (PDF) &nearr;
-        </a>
-        <span class="text-zinc-600">&bull;</span>
-        <a
-          href="/lipsey-resume.pdf"
-          target="_blank"
-          class="text-zinc-400 hover:text-white transition-colors"
-        >
-          Resume (PDF) &nearr;
-        </a>
-        <span class="text-zinc-600">&bull;</span>
-        <a
-          href="mailto:jevon_lipsey@mines.edu"
-          class="text-zinc-400 hover:text-white transition-colors"
-        >
-          jevon_lipsey@mines.edu
-        </a>
-      </div>
+    <div class="reading-body">
+      <p>I am a Computer Science Ph.D. student at Colorado School of Mines in the <strong>MIRROЯLab</strong>, advised by <strong>Dr. Tom Williams</strong>.</p>
+      <p>My research centers on <strong>Human-Robot Interaction (HRI)</strong> to design equitable, community-grounded social robotic systems. I study how robots interface with marginalized communities, specifically unhoused populations, and how interactive protocols can respect privacy, preserve human dignity, and avoid paternalistic defaults.</p>
+      <p>Prior to Mines, I completed my B.A. in Computer Science at <strong>Colorado College</strong> (GPA 3.92, Steven Janke Award for Outstanding Achievement in CS, Euclid Scholar). My undergraduate research spanned neurosymbolic AI (published at AAAI-25 and PMLR 2025), computational redistricting using MCMC Markov chains, and cultural humanities research for Oxford University Press examining Midwestern Hip Hop subcultures and intersectional feminist frameworks.</p>
+    </div>
+    <div class="border-t border-border pt-6 flex flex-wrap gap-6 text-xs font-mono">
+      <a href="/cv.pdf" target="_blank" rel="noreferrer" class="ink-bleed-link">Curriculum Vitae (PDF) ↗</a>
+      <a href="/lipsey-resume.pdf" target="_blank" rel="noreferrer" class="ink-bleed-link">Resume (PDF) ↗</a>
+      <a href="mailto:jevon_lipsey@mines.edu" class="ink-bleed-link">jevon_lipsey@mines.edu</a>
     </div>
   </div>
 </Layout>

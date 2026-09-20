@@ -2,7 +2,7 @@
 
 Personal academic portfolio and systems laboratory for **Jevon Lipsey**, Computer Science Ph.D. student at Colorado School of Mines in the MIRROЯLab (advised by Dr. Tom Williams).
 
-Minimal, fast, editorial academic aesthetic built with [Astro v5](https://astro.build), Tailwind CSS, and TypeScript.
+An editorial academic portfolio with a wheatpaste print treatment and an interactive robotic head. Built with Astro 7, React islands, Three.js, Tailwind CSS 4, and TypeScript.
 
 ---
 
@@ -121,7 +121,9 @@ npm install
 npm run dev
 
 # check build cleanly
+npm run check
 npm run build
+npm run test:motion
 ```
 
 ### Deploying to Cloudflare Pages (Custom Domain `jevonlipsey.com`)
@@ -141,6 +143,29 @@ npm run build
 
 ## 🏛️ Design Rules
 
-- **Minimal & Editorial:** Dark background (`#09090b`), high-contrast typography (`#fafafa` / `#a1a1aa`), max width `max-w-3xl`.
+- **Print and hardware:** Ink-black (`#000000`) or bone paper (`#eae7e1`), Geist typography, drafting-tape tags, and a mechanical theme switch. Themes persist in local storage.
+- **Layout:** A split desktop hero and stacked mobile sculpture above the bio. Reading pages stay at 800px; the homepage uses a wider editorial grid.
 - **Zero Scroll Hijacking:** 100% native scrolling.
-- **Fast:** Zero heavy client JS on reading pages.
+- **Motion:** Frame-independent gaze, separate drag/showcase rotation, and a 0.0005 resting threshold. Hidden and offscreen scenes pause. Reduced motion disables idle animation and lets rendering sleep at rest.
+- **Texture:** Procedural ceramic halftone and model-local neck fade. The viewport grain is 4% overlay, preserving black backgrounds.
+- **Fast:** WebGL only loads on the homepage. Reading pages use a small theme script and citation islands where needed.
+
+### Robot asset pipeline
+
+The source export is `public/models/jev_cyborg.glb`. The site loads the optimized `public/models/jev_cyborg.web.glb` (2.44 MB, down from 15.6 MB). After exporting from Blender, run:
+
+```bash
+npm run optimize:model
+```
+
+This generates 2048px WebP textures and Meshopt-compressed geometry. It checks that animation names and target channels match the original export. All 24 clips play together. Keep the original GLB and Blender files as the editing sources.
+
+### Browser verification
+
+The browser test requires Python Playwright and its Chromium installation. Start `npm run preview -- --port 4322` after building, then run:
+
+```bash
+python3 scripts/verify-portfolio.py --output /absolute/path/to/existing/screenshot-directory
+```
+
+It checks shader compilation, theme persistence, keyboard operation, showcase completion/interruption, mobile native scrolling, responsive overflow, offscreen pausing, and reduced-motion idling. Screenshots cover both themes and widths from 320px to 1440px.

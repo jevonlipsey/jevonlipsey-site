@@ -18,14 +18,15 @@ const { Content } = await render(paper);
 <Layout title={`${paper.data.title} | Jevon Lipsey`} description={paper.data.abstract}>
   <div class="space-y-8">
     <div class="space-y-3">
-      <a href="/research" class="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors inline-block">
+      <a href="/research" class="ink-bleed-link text-xs font-mono text-muted-foreground inline-block">
         &larr; all publications
       </a>
 
-      <div class="font-mono text-xs text-zinc-500">
-        {paper.data.year} &bull; {paper.data.venue}
+      <div class="font-mono text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 items-center">
+        <span class="pub-year text-neutral-400">{paper.data.year}</span>
+        <span class="venue-badge text-neutral-400">{paper.data.venue}</span>
         {paper.data.status === 'in-review' && (
-          <span class="ml-2 text-zinc-400 font-mono text-[11px]">(Under Review)</span>
+          <span class="status-badge text-amber-400/90">[under review]</span>
         )}
       </div>
 
@@ -33,11 +34,11 @@ const { Content } = await render(paper);
         {paper.data.title}
       </h1>
 
-      <p class="text-sm text-zinc-400 leading-relaxed">
+      <p class="text-sm text-muted-foreground leading-relaxed">
         {paper.data.authors.map((author, idx) => (
           <span>
             {author === 'Jevon Lipsey' ? (
-              <strong class="font-semibold text-zinc-200">{author}</strong>
+              <strong class="font-semibold text-foreground">{author}</strong>
             ) : (
               <span>{author}</span>
             )}
@@ -46,14 +47,13 @@ const { Content } = await render(paper);
         ))}
       </p>
 
-      <!-- Action Links -->
-      <div class="flex items-center gap-4 pt-2 text-xs font-mono">
+      <div class="publication-actions">
         {paper.data.pdf && (
           <a
             href={paper.data.pdf}
             target="_blank"
             rel="noreferrer"
-            class="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-300 transition-colors"
+            class="ink-bleed-link"
           >
             [pdf paper]
           </a>
@@ -63,7 +63,7 @@ const { Content } = await render(paper);
             href={paper.data.code}
             target="_blank"
             rel="noreferrer"
-            class="text-zinc-400 hover:text-white transition-colors"
+            class="ink-bleed-link"
           >
             [code repository]
           </a>
@@ -74,16 +74,14 @@ const { Content } = await render(paper);
       </div>
     </div>
 
-    <!-- Abstract Box -->
-    <div class="p-4 rounded-md border border-border/60 bg-card/40 space-y-2">
+    <div class="p-6 border-l-2 border-border bg-card/40 space-y-3">
       <h2 class="text-xs font-mono uppercase tracking-wider text-muted-foreground">Abstract</h2>
-      <p class="text-sm text-zinc-300 leading-relaxed">
+      <p class="text-base text-muted-foreground leading-relaxed">
         {paper.data.abstract}
       </p>
     </div>
 
-    <!-- Rendered Markdown Body -->
-    <div class="prose prose-invert prose-zinc max-w-none text-sm leading-relaxed space-y-4 pt-4 border-t border-border/40">
+    <div class="reading-body pt-4 border-t border-border">
       <Content />
     </div>
   </div>

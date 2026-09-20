@@ -1,246 +1,152 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import ImmersiveScene from '../components/ImmersiveScene';
 import { getCollection } from 'astro:content';
 import BibtexButton from '../components/BibtexButton';
 
-const allResearch = await getCollection('research');
-const sortedResearch = allResearch.sort((a, b) => b.data.year - a.data.year);
-
-const allThoughts = await getCollection('thoughts');
-const recentThoughts = allThoughts
+const sortedResearch = (await getCollection('research')).sort((a, b) => b.data.year - a.data.year);
+const recentThoughts = (await getCollection('thoughts'))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
   .slice(0, 3);
-
 const projects = [
   {
-    title: 'Pocket8',
-    subtitle: 'iOS PICO-8 WebAssembly Companion',
-    tech: 'WebAssembly, Swift, Vue.js',
-    desc: 'Officially licensed PICO-8 mobile companion app built in collaboration with Lexaloffle Games (6,000+ downloads). Modifies Emscripten boot sequence to bridge WebAssembly with iOS file systems and compressed memory snapshotting.',
+    title: 'pocket8',
+    metric: '6,000+ downloads',
+    tech: ['webassembly', 'swift', 'vue.js'],
+    desc: 'Officially licensed PICO-8 mobile companion built with Lexaloffle Games. Bridges WebAssembly memory snapshots with native iOS file systems.',
     link: 'https://github.com/jevonlipsey',
   },
   {
-    title: 'FeatherWeight',
-    subtitle: 'eBird Observation Probability Model',
-    tech: 'FastAPI, Python, Vue.js, SQLite',
-    desc: 'Scraping and statistical ranking engine modeling historical observation likelihoods to guide ornithological field observation without requiring raw statistical interpretation.',
+    title: 'ocean sweep',
+    metric: 'computer vision + physical control',
+    tech: ['UbiComp', 'three.js', 'micro:bit'],
+    desc: 'An ocean cleanup game steered with hand gestures and a physical Micro:bit controller. Webcam vision meets accelerometer input over Web Serial.',
     link: 'https://github.com/jevonlipsey',
   },
   {
-    title: 'Total Community Preservation',
-    subtitle: 'COI Redistricting Dual Graph Analysis',
-    tech: 'Python, GeoPandas, GerryChain MCMC',
-    desc: 'Adapted HHI formulation quantifying community of interest fractures across 20M+ Markov chain redistricting steps, demonstrating strategic sensitivity in Colorado legislative boundaries.',
+    title: 'total community preservation',
+    metric: '20m+ mcmc steps',
+    tech: ['python', 'geopandas', 'gerrychain'],
+    desc: 'Measuring community-of-interest fractures across Colorado legislative boundaries with a dual-graph pipeline and Markov chain redistricting simulations.',
+    link: 'https://github.com/jevonlipsey',
+  },
+  {
+    title: 'featherweight',
+    metric: 'ebird observation engine',
+    tech: ['fastapi', 'python', 'sqlite'],
+    desc: 'Historical observation data turned into likelihood estimates that help birders decide where to look next.',
     link: 'https://github.com/jevonlipsey',
   },
 ];
 ---
 
-<Layout title="Jevon Lipsey">
-  <div class="space-y-16">
+<Layout title="Jevon Lipsey | Human-Robot Interaction">
+  <section
+    class="hero-section relative min-h-[100svh] w-full flex flex-col justify-center px-6 md:px-12 overflow-hidden"
+    aria-labelledby="hero-title"
+    style="isolation: isolate"
+  >
+    <!-- LAYER 1: 3D canvas, absolute backdrop (rendered by the island) -->
+    <ImmersiveScene client:load />
 
-    <!-- 1. Hero & Bio -->
-    <section class="space-y-6">
-      <div class="space-y-2">
-        <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
-          Jevon Lipsey
-        </h1>
-        <p class="text-base text-zinc-300 font-normal">
-          Ph.D. Student in Human-Robot Interaction at Colorado School of Mines (MIRROЯLab)
-        </p>
+    <!-- LAYER 2: pure exclusion cutout, DIRECT SIBLING of the canvas, no wrappers -->
+    <h1
+      id="hero-title"
+      class="relative z-20 hero-title text-white font-sans font-bold tracking-[-0.04em] leading-[0.88] select-none pointer-events-none"
+      style="mix-blend-mode: exclusion;"
+    >
+      jevon<br />lipsey.
+    </h1>
+
+    <!-- LAYER 3: bio + links, interactive, below the title -->
+    <div class="hero-copy relative z-30 mt-4 max-w-md pointer-events-auto bg-transparent">
+      <p class="hero-bio"><strong>Human-robot interaction researcher.</strong><br />
+        Ph.D. student at Colorado School of Mines, advised by Dr. Tom Williams.</p>
+      <div class="hero-links" aria-label="Profile links">
+        <a class="ink-bleed-link" href="/cv.pdf" target="_blank" rel="noreferrer">cv ↗</a>
+        <a class="ink-bleed-link" href="https://github.com/jevonlipsey" target="_blank" rel="noreferrer">github ↗</a>
+        <a class="ink-bleed-link" href="https://scholar.google.com" target="_blank" rel="noreferrer">scholar ↗</a>
+        <a class="ink-bleed-link" href="mailto:jevon_lipsey@mines.edu">email ↗</a>
       </div>
+    </div>
+  </section>
 
-      <p class="text-base text-zinc-400 leading-relaxed max-w-2xl">
-        I research Human-Robot Interaction under Dr. Tom Williams, focusing on community-grounded social robotics, embodied agency, and algorithmic fairness. My past work spans published neurosymbolic AI (AAAI-25, PMLR 2025), computational redistricting using MCMC ensembles, and full-stack software systems.
-      </p>
+  <div class="research-intro relative group hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-2xl p-6 -mx-6">
+    <a href="/about" class="absolute inset-0 z-10" aria-label="Read more about Jevon Lipsey"></a>
+    <span class="about-label flex justify-between items-center w-full">
+      about
+      <span class="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300">↗</span>
+    </span>
+    <p>I study how physical agents navigate human and spatial boundaries, through community-grounded social robotics, embodied agency, and algorithmic fairness.</p>
+  </div>
 
-      <!-- Action Links -->
-      <div class="flex flex-wrap items-center gap-4 text-sm font-mono pt-1">
-        <a
-          href="/cv.pdf"
-          target="_blank"
-          class="text-zinc-200 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-300 transition-colors"
-        >
-          CV (PDF)
-        </a>
-        <span class="text-zinc-600">&bull;</span>
-        <a
-          href="https://github.com/jevonlipsey"
-          target="_blank"
-          rel="noreferrer"
-          class="text-zinc-400 hover:text-white transition-colors"
-        >
-          GitHub
-        </a>
-        <span class="text-zinc-600">&bull;</span>
-        <a
-          href="https://scholar.google.com"
-          target="_blank"
-          rel="noreferrer"
-          class="text-zinc-400 hover:text-white transition-colors"
-        >
-          Google Scholar
-        </a>
-        <span class="text-zinc-600">&bull;</span>
-        <a
-          href="mailto:jevon_lipsey@mines.edu"
-          class="text-zinc-400 hover:text-white transition-colors"
-        >
-          Email
-        </a>
-      </div>
-    </section>
-
-    <!-- 2. Selected Research -->
-    <section class="space-y-6">
-      <div class="border-b border-border/40 pb-2 flex items-baseline justify-between">
-        <h2 class="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-          Selected Research
-        </h2>
-        <a href="/research" class="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors">
-          all publications &rarr;
-        </a>
-      </div>
-
-      <div class="space-y-8">
-        {sortedResearch.map((paper) => (
-          <article class="space-y-2">
-            <div class="font-mono text-xs text-zinc-500">
-              {paper.data.year} &bull; {paper.data.venue}
-              {paper.data.status === 'in-review' && (
-                <span class="ml-2 text-zinc-400 font-mono text-[11px]">(Under Review)</span>
-              )}
+  <section class="home-section" aria-labelledby="research-title">
+    <div class="section-heading">
+      <h2 id="research-title">selected research</h2>
+      <a class="ink-bleed-link" href="/research">all publications ↗</a>
+    </div>
+    <div class="publication-list">
+      {sortedResearch.map((paper) => (
+        <article class="publication pub-card relative group">
+          <!-- dedicated stretched-link hit area for the entire card -->
+          <a href={`/research/${paper.id}`} class="absolute inset-0 z-10" aria-label={`Read ${paper.data.title}`}></a>
+          <div class="publication-meta flex flex-wrap gap-x-3 gap-y-1 items-center">
+            <span class="pub-year font-mono text-xs text-neutral-400">{paper.data.year}</span>
+            <span class="venue-badge font-mono text-xs text-neutral-400" title={paper.data.venue}>{paper.data.venue.match(/\b(HRI|AAAI|PMLR)\b/)?.[0] ?? paper.data.venue}</span>
+            {paper.data.status === 'in-review' && <span class="status-badge font-mono text-xs text-amber-400/90">[under review]</span>}
+          </div>
+          <div>
+            <h3><a class="ink-bleed-link" href={`/research/${paper.id}`}>{paper.data.title}</a></h3>
+            <p class="publication-authors">{paper.data.authors.map((author, index) => (
+              <span>{author === 'Jevon Lipsey' ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < paper.data.authors.length - 1 && ', '}</span>
+            ))}</p>
+            <p class="publication-abstract">{paper.data.abstract}</p>
+            <div class="publication-actions relative z-20">
+              <a class="ink-bleed-link" href={`/research/${paper.id}`}>[read note]</a>
+              {paper.data.pdf && <a class="ink-bleed-link" href={paper.data.pdf} target="_blank" rel="noreferrer">[pdf]</a>}
+              {paper.data.code && <a class="ink-bleed-link" href={paper.data.code} target="_blank" rel="noreferrer">[code]</a>}
+              {paper.data.bibtex && <BibtexButton client:load bibtex={paper.data.bibtex} title={paper.data.title} />}
             </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
 
-            <h3 class="text-base font-medium text-foreground">
-              <a
-                href={`/research/${paper.id}`}
-                class="hover:underline underline-offset-4"
-              >
-                {paper.data.title}
-              </a>
-            </h3>
+  <section class="home-section" aria-labelledby="systems-title">
+    <div class="section-heading">
+      <h2 id="systems-title">software &amp; systems</h2>
+      <a class="ink-bleed-link" href="/demos">systems &amp; demos ↗</a>
+    </div>
+    <div class="project-grid">
+      {projects.map((project) => (
+        <article class="project-card relative">
+          <!-- dedicated stretched-link hit area for the entire card -->
+          <a href={project.link} target="_blank" rel="noreferrer" class="absolute inset-0 z-10" aria-label={`Open ${project.title}`}></a>
+          <span class="project-metric">{project.metric}</span>
+          <h3><a class="ink-bleed-link" href={project.link} target="_blank" rel="noreferrer">{project.title} ↗</a></h3>
+          <p>{project.desc}</p>
+          <div class="project-tags">{project.tech.map((tag) => <span class="project-tag">{tag}</span>)}</div>
+        </article>
+      ))}
+    </div>
+  </section>
 
-            <!-- Authors list with Jevon Lipsey highlighted -->
-            <p class="text-sm text-zinc-400 leading-snug">
-              {paper.data.authors.map((author, index) => (
-                <span>
-                  {author === 'Jevon Lipsey' ? (
-                    <strong class="font-semibold text-zinc-200">{author}</strong>
-                  ) : (
-                    <span>{author}</span>
-                  )}
-                  {index < paper.data.authors.length - 1 && ', '}
-                </span>
-              ))}
-            </p>
-
-            <p class="text-sm text-zinc-400 leading-relaxed pt-1">
-              {paper.data.abstract}
-            </p>
-
-            <div class="flex items-center gap-3 pt-1 text-xs font-mono text-zinc-500">
-              <a
-                href={`/research/${paper.id}`}
-                class="hover:text-zinc-200 transition-colors"
-              >
-                [read summary]
-              </a>
-              {paper.data.pdf && (
-                <a
-                  href={paper.data.pdf}
-                  target="_blank"
-                  rel="noreferrer"
-                  class="hover:text-zinc-200 transition-colors"
-                >
-                  [pdf]
-                </a>
-              )}
-              {paper.data.code && (
-                <a
-                  href={paper.data.code}
-                  target="_blank"
-                  rel="noreferrer"
-                  class="hover:text-zinc-200 transition-colors"
-                >
-                  [code]
-                </a>
-              )}
-              {paper.data.bibtex && (
-                <BibtexButton client:load bibtex={paper.data.bibtex} title={paper.data.title} />
-              )}
-            </div>
+  {recentThoughts.length > 0 && (
+    <section class="home-section" aria-labelledby="writing-title">
+      <div class="section-heading">
+        <h2 id="writing-title">writing</h2>
+        <a class="ink-bleed-link" href="/thoughts">all writing ↗</a>
+      </div>
+      <div class="writing-list">
+        {recentThoughts.map((post) => (
+          <article class="writing-entry">
+            <time datetime={post.data.date.toISOString()}>{post.data.date.toISOString().slice(0, 10)}</time>
+            <div><a class="ink-bleed-link" href={`/thoughts/${post.id}`}>{post.data.title}</a></div>
           </article>
         ))}
       </div>
     </section>
-
-    <!-- 3. Projects & Systems -->
-    <section class="space-y-6">
-      <div class="border-b border-border/40 pb-2 flex items-baseline justify-between">
-        <h2 class="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-          Selected Projects &amp; Systems
-        </h2>
-        <a href="/demos" class="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors">
-          demos &rarr;
-        </a>
-      </div>
-
-      <div class="space-y-6">
-        {projects.map((proj) => (
-          <div class="space-y-1.5">
-            <div class="flex items-baseline justify-between gap-4">
-              <h3 class="text-sm font-medium text-foreground">
-                <a
-                  href={proj.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  class="hover:underline underline-offset-4"
-                >
-                  {proj.title}
-                </a>
-                <span class="font-normal text-zinc-400 ml-2">&mdash; {proj.subtitle}</span>
-              </h3>
-              <span class="font-mono text-xs text-zinc-500 shrink-0">{proj.tech}</span>
-            </div>
-            <p class="text-sm text-zinc-400 leading-relaxed">
-              {proj.desc}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-
-    <!-- 4. Recent Writing -->
-    {recentThoughts.length > 0 && (
-      <section class="space-y-6">
-        <div class="border-b border-border/40 pb-2 flex items-baseline justify-between">
-          <h2 class="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-            Writing
-          </h2>
-          <a href="/thoughts" class="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors">
-            all posts &rarr;
-          </a>
-        </div>
-
-        <div class="space-y-4">
-          {recentThoughts.map((post) => (
-            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-4">
-              <a
-                href={`/thoughts/${post.id}`}
-                class="text-sm font-medium text-zinc-300 hover:text-white hover:underline underline-offset-4"
-              >
-                {post.data.title}
-              </a>
-              <span class="font-mono text-xs text-zinc-500 whitespace-nowrap">
-                {post.data.date.toISOString().slice(0, 10)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-  </div>
+  )}
 </Layout>
