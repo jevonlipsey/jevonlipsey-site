@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const source = 'public/models/jev_cyborg.glb';
+const source = 'assets-src/jev_cyborg.glb';
 const output = 'public/models/jev_cyborg.web.glb';
 const temp = mkdtempSync(join(tmpdir(), 'portfolio-model-'));
 
