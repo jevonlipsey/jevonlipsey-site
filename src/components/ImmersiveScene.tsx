@@ -189,12 +189,14 @@ export default function ImmersiveScene() {
     composer.addPass(outputPass);
 
     const ambient = new THREE.AmbientLight(0xffffff, 1.2);
-    const key = new THREE.DirectionalLight(0xffffff, 2.1);
-    key.position.set(3, 4, 5);
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    key.position.set(4, 3.5, 4.5);
     const fill = new THREE.DirectionalLight(0xffffff, 1);
     fill.position.set(-3, 1, 3);
-    const rim = new THREE.DirectionalLight(0xffffff, 2);
-    rim.position.set(-2, 3, -3);
+    // low, tight, hard rim behind the silhouette: crisp glints along the
+    // ear plates, jawline, and neck edge instead of a flat halo
+    const rim = new THREE.DirectionalLight(0xffffff, 3.2);
+    rim.position.set(-3.5, 2.5, -4);
     scene.add(ambient, key, fill, rim);
 
     const framingGroup = new THREE.Group();
@@ -308,6 +310,7 @@ export default function ImmersiveScene() {
       ambient.color.setHex(dark ? 0xffffff : 0xfff1df);
       ambient.intensity = dark ? 1.2 : 1.5;
       key.color.setHex(dark ? 0xffffff : 0xfff7eb);
+      key.intensity = dark ? 2.4 : 1.8;
       fill.color.setHex(dark ? 0xd9d9d9 : 0xd6c9b5);
       bloomPass.enabled = dark;
 
@@ -443,8 +446,10 @@ export default function ImmersiveScene() {
             const gold =
               /gold/i.test(material.name) || /earring|torus/i.test(object.name);
             const ceramic = !silver && !gold;
-            material.roughness = ceramic ? 0.72 : 0.3;
-            material.metalness = ceramic ? 0.08 : 0.6;
+            // semi-gloss ceramic: low roughness catches sharp specular glints,
+            // a touch of metalness lifts the rim reflections off the black
+            material.roughness = ceramic ? 0.5 : 0.3;
+            material.metalness = ceramic ? 0.15 : 0.6;
             material.emissive.setHex(0x000000);
             material.emissiveIntensity = 0;
             if (silver) material.color.setHex(0xc8c7c3);
@@ -463,7 +468,7 @@ export default function ImmersiveScene() {
             material.customProgramCacheKey = () => "ceramic_halftone_v1";
             material.onBeforeCompile = (shader) => {
               // uniforms keep program identity stable across independently faded meshes.
-              shader.uniforms.stippleStrength = { value: ceramic ? 0.22 : 0 };
+              shader.uniforms.stippleStrength = { value: ceramic ? 0.16 : 0 };
               shader.uniforms.stipplePixelRatio = stipplePixelRatio;
               shader.uniforms.neckFade = {
                 value: isDissolveTarget ? 1.0 : 0.0,

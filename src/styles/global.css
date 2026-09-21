@@ -251,6 +251,25 @@ button { cursor: pointer; }
   transform: translateX(5px);
   color: var(--foreground);
 }
+.site-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15; /* sits above the model canvas, below typography */
+  background: radial-gradient(
+    circle at 50% 45%,
+    transparent 45%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+}
+
+:root:not(.dark) .site-vignette {
+  background: radial-gradient(
+    circle at 50% 45%,
+    transparent 55%,
+    rgba(30, 25, 20, 0.08) 100%
+  );
+}
 .robot-stage {
   position: fixed;
   top: 0;
