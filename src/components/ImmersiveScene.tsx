@@ -228,6 +228,13 @@ export default function ImmersiveScene() {
     let cursorY = 0;
     let smoothCursorX = 0;
     let smoothCursorY = 0;
+    let cursorSpeed = 0;
+    let cursorEventX = 0;
+    let cursorEventY = 0;
+    let cursorEventAt = 0;
+    let hoverGazeX: number | null = null;
+    let hoverGazeY: number | null = null;
+    let lastHoverAt = 0;
     let isTrackingPaused = false;
     let hasRealCursor = false;
     let autoGazeX = 0;
@@ -271,6 +278,24 @@ export default function ImmersiveScene() {
     function interrupt(now = performance.now()) {
       lastActivity = now;
       wake();
+    }
+
+    // animation principle: big gaze retargets must ease in (bounded start
+    // speed) and ease out (exponential settle near the target) rather than
+    // whip at full exponential velocity, then creep forever
+    function easedChase(
+      cur: number,
+      target: number,
+      delta: number,
+      lambda: number,
+      maxSpeed: number,
+    ) {
+      const eased = cur + (target - cur) * (1 - Math.exp(-lambda * delta));
+      const step = eased - cur;
+      const maxStep = maxSpeed * delta;
+      return Math.abs(step) <= maxStep
+        ? eased
+        : cur + Math.sign(step) * maxStep;
     }
 
     function applyTheme() {
@@ -628,6 +653,21 @@ export default function ImmersiveScene() {
           hasRealCursor = true;
           cursorX = (e.clientX / window.innerWidth) * 2 - 1;
           cursorY = 1 - (e.clientY / window.innerHeight) * 2;
+          // screen-space speed, px/ms: distinguishes a fast cross-screen roam
+          // from slow precision hops inside the research cluster
+          if (cursorEventAt > 0) {
+            const dtMs = Math.max(e.timeStamp - cursorEventAt, 1);
+            const travel = Math.hypot(
+              e.clientX - cursorEventX,
+              e.clientY - cursorEventY,
+            );
+            cursorSpeed = travel / dtMs;
+          } else {
+            cursorSpeed = 0;
+          }
+          cursorEventX = e.clientX;
+          cursorEventY = e.clientY;
+          cursorEventAt = e.timeStamp;
           interrupt();
         }
       },
@@ -662,6 +702,7 @@ export default function ImmersiveScene() {
         hasRealCursor = false;
         cursorX = 0;
         cursorY = 0;
+        cursorSpeed = 0;
         interrupt();
       },
       { signal },
@@ -811,33 +852,64 @@ export default function ImmersiveScene() {
       const breathY =
         Math.cos(elapsed * 0.55) * 0.02 + Math.cos(elapsed * 1.2) * 0.01;
 
-      // butter-smooth exponential chase: cursor never snaps or freezes
-      const chaseFactor = 1.0 - Math.exp(-6.0 * delta);
+      // adaptive exponential chase: tightens as the raw cursor outruns it so a
+// cross-screen flick arrives near-instantly, loosens to buttery near-rest
+      const cursorGap = Math.hypot(
+        cursorX - smoothCursorX,
+        cursorY - smoothCursorY,
+      );
+      const chaseFactor =
+        1.0 - Math.exp(-THREE.MathUtils.lerp(6, 22, smoothstep(cursorGap / 0.8)) * delta);
       smoothCursorX += (cursorX - smoothCursorX) * chaseFactor;
       smoothCursorY += (cursorY - smoothCursorY) * chaseFactor;
+      cursorSpeed *= Math.exp(-8 * delta);
 
       let x = 0;
       let y = 0;
       if (pointerId !== null) {
-        // a grab owns the orientation: ease the face back to body-neutral so
-        // the spin is read clearly instead of counter-tracked by gaze
+        // a grab owns the orientation: ease the face back to body-neutral, and
+        // drop any lingering hover glide so the next hover re-locks cleanly
+        hoverGazeX = null;
+        hoverGazeY = null;
       } else if (target) {
+        // hover gaze rides a damped glide between the tightly-packed research
+        // links so hopping element-to-element eases the eyes instead of snapping
         const rect = target.getBoundingClientRect();
-        x = THREE.MathUtils.clamp(
+        const tx = THREE.MathUtils.clamp(
           ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1,
           -1,
           1,
         );
-        y = THREE.MathUtils.clamp(
+        const ty = THREE.MathUtils.clamp(
           1 - ((rect.top + rect.height / 2) / window.innerHeight) * 2,
           -1,
           1,
         );
+        const gx = hoverGazeX === null ? tx : damp(hoverGazeX, tx, delta, 5);
+        const gy = hoverGazeY === null ? ty : damp(hoverGazeY, ty, delta, 5);
+        hoverGazeX = gx;
+        hoverGazeY = gy;
+        lastHoverAt = now;
+        x = gx;
+        y = gy;
       } else if (hasRealCursor) {
-        // active global mouse gaze tracking down the page with subtle organic breath
-        const mouseIdle = smoothstep((stillFor - 3000) / 1500);
-        x = THREE.MathUtils.lerp(smoothCursorX, autoGazeX, mouseIdle) + breathX;
-        y = THREE.MathUtils.lerp(smoothCursorY, autoGazeY, mouseIdle) + breathY;
+        // hold the last glide briefly so slow leave->enter churn between packed
+        // links never flicks the gaze at the cursor; a fast cross-screen roam
+        // breaks the lock immediately so the head follows the cursor acutely
+        const holdGlide =
+          now - lastHoverAt <= 200 && cursorSpeed < 1.2;
+        const gx = hoverGazeX;
+        const gy = hoverGazeY;
+        if (gx !== null && gy !== null && holdGlide) {
+          x = gx;
+          y = gy;
+        } else {
+          hoverGazeX = null;
+          hoverGazeY = null;
+          const mouseIdle = smoothstep((stillFor - 3000) / 1500);
+          x = THREE.MathUtils.lerp(smoothCursorX, autoGazeX, mouseIdle) + breathX;
+          y = THREE.MathUtils.lerp(smoothCursorY, autoGazeY, mouseIdle) + breathY;
+        }
       } else {
         x = autoGazeX + breathX;
         y = autoGazeY + breathY;
@@ -857,9 +929,10 @@ export default function ImmersiveScene() {
       const targetYaw = reduced
         ? 0
         : THREE.MathUtils.clamp(x * 0.65, -0.65, 0.65);
-      // an active hover/focus target overrides the passive scroll pitch so the
-      // robot actually looks at the element instead of fighting its clamp
-      const activePitch = target ? -y * 0.45 : scrollPitch - cursorPitch;
+      // the gaze rides the scroll posture for the cursor AND hovered targets, so a
+      // link hover deep in the research section tilts within the bowed reading
+      // angle instead of snapping the head back up and killing the effect
+      const activePitch = scrollPitch - cursorPitch;
       const targetPitch = reduced
         ? 0
         : THREE.MathUtils.clamp(activePitch, -0.45, 0.55);
@@ -869,8 +942,8 @@ export default function ImmersiveScene() {
           ? 0.04
           : -targetYaw * 0.08 + Math.sin(elapsed * 0.6) * 0.015;
 
-      curYaw = damp(curYaw, targetYaw, delta, 7.5);
-      curPitch = damp(curPitch, targetPitch, delta, 7.5);
+      curYaw = easedChase(curYaw, targetYaw, delta, 9, 2.6);
+      curPitch = easedChase(curPitch, targetPitch, delta, 9, 1.5);
       curRoll = damp(curRoll, targetRoll, delta, 7.5);
       scrollVelocity *= Math.exp(-8 * delta);
       scrollBias = damp(scrollBias, scrollVelocity * 2, delta, 5);
