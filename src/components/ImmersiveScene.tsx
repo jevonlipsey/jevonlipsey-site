@@ -5,11 +5,87 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
-import { damp, smoothstep, tourYaw, springExplode } from "../lib/hero-motion";
+import { damp, smoothstep, tourYaw } from "../lib/hero-motion";
 
 // cache the decoded GLB so the model survives hot reloads and re-mounts
 THREE.Cache.enabled = true;
+
+const HalftoneDitherShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    resolution: { value: new THREE.Vector2(typeof window !== 'undefined' ? window.innerWidth : 1920, typeof window !== 'undefined' ? window.innerHeight : 1080) },
+    gridSize: { value: 12.0 },        // Punchier dot size for true editorial print look
+    patternAngle: { value: 0.7853 }, // 45° halftone screen angle
+    strength: { value: 0.75 },       // Punchier contrast between ink and paper
+    highlightGain: { value: 1.4 },   // Highlight multiplier (lower in dark mode)
+    fadeProgress: { value: 0.0 },   // Controlled entrance fade
+    neckFadeStart: { value: 0.28 },  // Screen Y bottom threshold where fade begins
+    neckFadeEnd: { value: 0.12 },    // Screen Y threshold where it dissolves
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform vec2 resolution;
+    uniform float gridSize;
+    uniform float patternAngle;
+    uniform float strength;
+    uniform float highlightGain;
+    uniform float fadeProgress;
+    uniform float neckFadeStart;
+    uniform float neckFadeEnd;
+    varying vec2 vUv;
+
+    float getLuma(vec3 c) {
+      return dot(c, vec3(0.299, 0.587, 0.114));
+    }
+
+    void main() {
+      vec4 texColor = texture2D(tDiffuse, vUv);
+
+      if (texColor.a < 0.005) {
+        gl_FragColor = vec4(0.0);
+        return;
+      }
+
+      // 1. Scaled 45-degree halftone coordinate system
+      vec2 screenPos = vUv * resolution;
+      float s = sin(patternAngle);
+      float c = cos(patternAngle);
+      mat2 rot = mat2(c, -s, s, c);
+      vec2 rotPos = rot * screenPos;
+
+      vec2 cell = fract(rotPos / gridSize) - 0.5;
+      float distToCenter = length(cell);
+
+      float luma = clamp(getLuma(texColor.rgb), 0.0, 1.0);
+
+      // Distinct dot thresholds
+      float dotRadius = clamp(sqrt(luma) * 0.52, 0.05, 0.48);
+      float dotMask = smoothstep(dotRadius + 0.06, dotRadius - 0.06, distToCenter);
+
+      // Contrast ink styling
+      vec3 patternColor = mix(texColor.rgb * 0.25, texColor.rgb * highlightGain, dotMask);
+      vec3 finalRgb = mix(texColor.rgb, patternColor, strength);
+
+      // 2. Vertical neck fade: soften the harsh bottom boundary
+      // Lower vUv.y corresponds to the bottom of the screen/model
+      float neckAlpha = smoothstep(neckFadeEnd, neckFadeStart, vUv.y);
+
+      // 3. Combine with intro fade
+      float totalAlpha = texColor.a * neckAlpha * clamp(fadeProgress, 0.0, 1.0);
+
+      gl_FragColor = vec4(finalRgb, totalAlpha);
+    }
+  `,
+};
 
 const INTERACTIVE_TARGETS =
   'nav a, header a, a[href*="github"], a[href*="scholar"], a[href*="cv"], a[href*="mailto"], .pub-card, .project-card, #theme-toggle';
@@ -58,6 +134,7 @@ export default function ImmersiveScene() {
 
     let cameraBaseZ = 5.8;
     let entranceStart = -1;
+    let fadeStart = -1;
     let disposed = false;
     let frame = 0;
     let lastFrame = performance.now();
@@ -86,9 +163,11 @@ export default function ImmersiveScene() {
       0.3,
       1.3,
     );
+    const ditherPass = new ShaderPass(HalftoneDitherShader);
     const outputPass = new OutputPass();
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
+    composer.addPass(ditherPass);
     composer.addPass(outputPass);
 
     const ambient = new THREE.AmbientLight(0xffffff, 1.2);
@@ -119,6 +198,13 @@ export default function ImmersiveScene() {
     let tourFrom = 0;
     let spinYaw = 0;
     let spinVelocity = 0;
+    let pointerId: number | null = null;
+    let gesture: "pending" | "spin" | "scroll" = "pending";
+    let startX = 0;
+    let startY = 0;
+    let previousX = 0;
+    let previousTime = 0;
+    let maxDisplacement = 0;
     let curYaw = 0;
     let curPitch = 0;
     let curRoll = 0;
@@ -138,9 +224,6 @@ export default function ImmersiveScene() {
     let weightTo = 1;
     let weightStart = performance.now();
     let weightDuration = 800;
-    let curExplode = 0;
-    let targetExplode = 0;
-    let explodeVelocity = 0;
     let scrollY = 0;
     let scrollVelocity = 0;
     let scrollBias = 0;
@@ -149,17 +232,6 @@ export default function ImmersiveScene() {
     let hoverTarget: Element | null = null;
     const hoveredTargets = new Set<Element>();
     let focusTarget: Element | null = null;
-    let pointerId: number | null = null;
-    let gesture: "pending" | "spin" | "scroll" = "pending";
-    let startX = 0;
-    let startY = 0;
-    let previousX = 0;
-    let previousTime = 0;
-    let maxDisplacement = 0;
-    const pings: {
-      mesh: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
-      born: number;
-    }[] = [];
     const stipplePixelRatio = { value: renderer.getPixelRatio() };
 
     // natural human-like fixation targets across the viewport
@@ -221,6 +293,17 @@ export default function ImmersiveScene() {
       key.color.setHex(dark ? 0xffffff : 0xfff7eb);
       fill.color.setHex(dark ? 0xd9d9d9 : 0xd6c9b5);
       bloomPass.enabled = dark;
+
+      if (dark) {
+        ditherPass.uniforms.strength.value = 0.75;
+        ditherPass.uniforms.gridSize.value = 12.0;
+        ditherPass.uniforms.highlightGain.value = 0.95;
+      } else {
+        ditherPass.uniforms.strength.value = 0.65;
+        ditherPass.uniforms.gridSize.value = 11.0;
+        ditherPass.uniforms.highlightGain.value = 1.4;
+      }
+
       interrupt();
     }
 
@@ -262,6 +345,7 @@ export default function ImmersiveScene() {
       composer.setPixelRatio(pixelRatio);
       composer.setSize(width, height);
       bloomPass.resolution.set(width * pixelRatio, height * pixelRatio);
+      ditherPass.uniforms.resolution.value.set(width * pixelRatio, height * pixelRatio);
       stipplePixelRatio.value = pixelRatio;
       wake();
     }
@@ -405,6 +489,7 @@ export default function ImmersiveScene() {
         renderer.compile(scene, camera);
         setStatus("ready");
         entranceStart = performance.now();
+        fadeStart = performance.now();
         window.setTimeout(() => {
           if (!disposed) setBooted(true);
         }, 400);
@@ -417,26 +502,6 @@ export default function ImmersiveScene() {
         if (!disposed) setStatus("unavailable");
       },
     );
-
-    function spawnPing() {
-      if (reducedMotion.matches || !model) return;
-      const mesh = new THREE.Mesh(
-        new THREE.RingGeometry(0.06, 0.08, 32),
-        new THREE.MeshBasicMaterial({
-          color: document.documentElement.classList.contains("dark")
-            ? 0xdddddd
-            : 0x141414,
-          transparent: true,
-          opacity: 0.65,
-          depthWrite: false,
-        }),
-      );
-      mesh.position.set(modelOffsetX, framingGroup.position.y, 1);
-      mesh.quaternion.copy(camera.quaternion);
-      scene.add(mesh);
-      pings.push({ mesh, born: performance.now() });
-      wake();
-    }
 
     function onPointerDown(event: PointerEvent) {
       if (!event.isPrimary || event.button !== 0 || pointerId !== null) return;
@@ -473,12 +538,6 @@ export default function ImmersiveScene() {
           -5,
           5,
         );
-        if (Math.abs(spinVelocity) > 0.8) {
-          targetExplode = Math.max(
-            targetExplode,
-            Math.min(0.55, Math.abs(spinVelocity) * 0.12),
-          );
-        }
       }
       previousX = event.clientX;
       previousTime = now;
@@ -486,13 +545,6 @@ export default function ImmersiveScene() {
 
     function onPointerUp(event: PointerEvent) {
       if (event.pointerId !== pointerId) return;
-      if (
-        event.type === "pointerup" &&
-        gesture === "pending" &&
-        maxDisplacement < 4 &&
-        Math.hypot(event.clientX - startX, event.clientY - startY) < 4
-      )
-        spawnPing();
       if (container!.hasPointerCapture(event.pointerId))
         container!.releasePointerCapture(event.pointerId);
       if (event.type !== "pointerup") spinVelocity = 0;
@@ -547,15 +599,6 @@ export default function ImmersiveScene() {
         { signal },
       );
     });
-    container.addEventListener("pointerdown", onPointerDown, { signal });
-    container.addEventListener(
-      "dblclick",
-      () => {
-        targetExplode = 0.55;
-        interrupt();
-      },
-      { signal },
-    );
     window.addEventListener(
       "pointermove",
       (e) => {
@@ -570,6 +613,9 @@ export default function ImmersiveScene() {
       },
       { passive: true, signal },
     );
+    container.addEventListener("pointerdown", onPointerDown, { signal });
+    window.addEventListener("pointerup", onPointerUp, { signal });
+    window.addEventListener("pointercancel", onPointerUp, { signal });
     // freeze gaze while the theme toggle is clicked so the head doesn't
     // lurch toward the top-right button; hold neutral, then resume
     document.querySelector("#theme-toggle")?.addEventListener(
@@ -599,8 +645,6 @@ export default function ImmersiveScene() {
       },
       { signal },
     );
-    window.addEventListener("pointerup", onPointerUp, { signal });
-    window.addEventListener("pointercancel", onPointerUp, { signal });
     window.addEventListener("wheel", () => interrupt(), {
       passive: true,
       signal,
@@ -652,6 +696,12 @@ export default function ImmersiveScene() {
     function animate(now: number) {
       frame = 0;
       if (disposed || document.hidden) return;
+
+      if (fadeStart >= 0) {
+        const fadeT = (now - fadeStart) / 2500;
+        ditherPass.uniforms.fadeProgress.value = Math.min(fadeT, 1.0);
+        if (fadeT >= 1.0) fadeStart = -1;
+      }
 
       // scroll exit & retirement at page bottom (smooth GPU opacity dissolve, no layout thrashing)
       const maxScroll = Math.max(
@@ -707,12 +757,6 @@ export default function ImmersiveScene() {
       if (mode === "SHOWCASE") {
         const t = (now - tourStart) / 1000;
         spinYaw = tourYaw(t, tourFrom);
-        if (t < 2.0) {
-          targetExplode = Math.max(
-            targetExplode,
-            0.45 * Math.sin((t / 2.0) * Math.PI),
-          );
-        }
         if (t >= 6.7) {
           spinYaw = 0;
           spinVelocity = 0;
@@ -731,36 +775,6 @@ export default function ImmersiveScene() {
         weightTo,
         smoothstep((now - weightStart) / weightDuration),
       );
-
-      // subtle mechanical venting expansion (face/eyes/jaw remain completely rigid)
-      const spr = springExplode(
-        curExplode,
-        targetExplode,
-        explodeVelocity,
-        delta,
-      );
-      curExplode = spr.position;
-      explodeVelocity = spr.velocity;
-      targetExplode = damp(targetExplode, 0, delta, 3.2);
-      if (
-        model &&
-        (curExplode > 0.0005 || Math.abs(explodeVelocity) > 0.0005)
-      ) {
-        model.traverse((obj) => {
-          if (obj instanceof THREE.Mesh && obj.userData.origin) {
-            if (obj.userData.isOuterPlate) {
-              const vent = THREE.MathUtils.clamp(curExplode * 0.08, 0, 0.08);
-              obj.position.set(
-                obj.userData.origin.x,
-                obj.userData.origin.y + vent * 0.35,
-                obj.userData.origin.z - vent,
-              );
-            } else {
-              obj.position.copy(obj.userData.origin);
-            }
-          }
-        });
-      }
 
       // scroll parallax: depth along Z, tilt down, and subtle elevation
       const aspect = container!.clientWidth / container!.clientHeight;
@@ -859,18 +873,6 @@ export default function ImmersiveScene() {
         delta,
         3,
       );
-      for (let i = pings.length - 1; i >= 0; i--) {
-        const ping = pings[i];
-        const progress = (now - ping.born) / 500;
-        ping.mesh.scale.setScalar(1 + 2.2 * progress);
-        ping.mesh.material.opacity = 0.65 * (1 - progress);
-        if (progress >= 1) {
-          scene.remove(ping.mesh);
-          ping.mesh.geometry.dispose();
-          ping.mesh.material.dispose();
-          pings.splice(i, 1);
-        }
-      }
       composer.render();
       frame = requestAnimationFrame(animate);
     }
@@ -893,6 +895,7 @@ export default function ImmersiveScene() {
       if (model) mixer?.uncacheRoot(model);
       disposeModel(scene);
       bloomPass.dispose();
+      ditherPass.dispose();
       renderPass.dispose();
       outputPass.dispose();
       composer.dispose();

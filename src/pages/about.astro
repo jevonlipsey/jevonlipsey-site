@@ -8,11 +8,23 @@ import Layout from '../layouts/Layout.astro';
       <h1 class="font-semibold">About</h1>
       <p class="text-muted-foreground">Background, research context, and curriculum vitae.</p>
     </div>
-    <div class="reading-body">
-      <p>I am a Computer Science Ph.D. student at Colorado School of Mines in the <strong>MIRROЯLab</strong>, advised by <strong>Dr. Tom Williams</strong>.</p>
-      <p>My research centers on <strong>Human-Robot Interaction (HRI)</strong> to design equitable, community-grounded social robotic systems. I study how robots interface with marginalized communities, specifically unhoused populations, and how interactive protocols can respect privacy, preserve human dignity, and avoid paternalistic defaults.</p>
-      <p>Prior to Mines, I completed my B.A. in Computer Science at <strong>Colorado College</strong> (GPA 3.92, Steven Janke Award for Outstanding Achievement in CS, Euclid Scholar). My undergraduate research spanned neurosymbolic AI (published at AAAI-25 and PMLR 2025), computational redistricting using MCMC Markov chains, and cultural humanities research for Oxford University Press examining Midwestern Hip Hop subcultures and intersectional feminist frameworks.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_minmax(200px,280px)] gap-10 items-start">
+      <div class="reading-body order-2 md:order-1">
+        <p>I am a Computer Science Ph.D. student at Colorado School of Mines in the <strong>MIRROЯLab</strong>, advised by <strong>Dr. Tom Williams</strong>.</p>
+        <p>My research centers on <strong>Human-Robot Interaction (HRI)</strong> to design equitable, community-grounded social robotic systems. I study how robots interface with marginalized communities, specifically unhoused populations, and how interactive protocols can respect privacy, preserve human dignity, and avoid paternalistic defaults.</p>
+        <p>Prior to Mines, I completed my B.A. in Computer Science at <strong>Colorado College</strong> (GPA 3.92, Steven Janke Award for Outstanding Achievement in CS, Euclid Scholar). My undergraduate research spanned neurosymbolic AI (published at AAAI-25 and PMLR 2025), computational redistricting using MCMC Markov chains, and cultural humanities research for Oxford University Press examining Midwestern Hip Hop subcultures and intersectional feminist frameworks.</p>
+      </div>
+
+      <figure class="group relative w-full overflow-hidden rounded-xl border border-border bg-muted/20 order-1 md:order-2 isolate">
+        <img src="/professional-pic.webp" alt="Jevon Lipsey" class="w-full h-auto object-cover grayscale contrast-125 transition-transform duration-700 ease-out group-hover:grayscale-0 group-hover:scale-105 will-change-transform" />
+        <div class="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 dark:ring-white/10 rounded-xl z-10"></div>
+        <figcaption class="absolute bottom-3 right-3 z-20 px-2.5 py-1 bg-background/90 dark:bg-background/80 backdrop-blur-md border border-border rounded text-[10px] font-mono text-foreground uppercase tracking-widest opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out">
+          Jevon Lipsey
+        </figcaption>
+      </figure>
     </div>
+
     <div class="border-t border-border pt-6 flex flex-wrap gap-6 text-xs font-mono">
       <a href="/cv.pdf" target="_blank" rel="noreferrer" class="ink-bleed-link">Curriculum Vitae (PDF) ↗</a>
       <a href="/lipsey-resume.pdf" target="_blank" rel="noreferrer" class="ink-bleed-link">Resume (PDF) ↗</a>

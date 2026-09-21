@@ -10,7 +10,7 @@ const navLinks = [
 <header class="site-header">
   <div class="header-inner">
     <a href="/" class="avatar-logo" aria-label="Jevon Lipsey home">
-      <img src="/avatar.svg" alt="Jevon Lipsey" width="30" height="30" class="pixel-avatar" />
+      <img src="/avatar.svg" alt="Jevon Lipsey" width="40" height="40" class="pixel-avatar" />
     </a>
     <nav aria-label="Main navigation">
       {navLinks.map((item) => (
@@ -19,8 +19,21 @@ const navLinks = [
         </a>
       ))}
     </nav>
-    <button id='theme-toggle' class='hardware-switch' type='button' role='switch' aria-label='Toggle theme' aria-checked='true'>
-      <span class='switch-housing' aria-hidden='true'><span class='switch-lever'></span></span>
+    <button id='theme-toggle' class='flex items-center justify-center w-9 h-9 rounded-full border transition-colors duration-200 bg-[#e2ded7] border-[#d4ceca] text-[#111111] dark:bg-[#18181b] dark:border-[#27272a] dark:text-[#fafafa]' type='button' aria-label='Toggle theme'>
+      <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+      <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
     </button>
   </div>
 </header>

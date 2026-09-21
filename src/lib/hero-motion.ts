@@ -18,12 +18,3 @@ export function tourYaw(seconds: number, from = 0) {
   if (seconds < 5.9) return Math.PI + (-0.2 - Math.PI) * smoothstep((seconds - 4.3) / 1.6);
   return -0.2 * (1 - smoothstep((seconds - 5.9) / 0.8));
 }
-
-
-export function springExplode(current: number, target: number, velocity: number, delta: number, stiffness = 110, damping = 12) {
-  const force = -stiffness * (current - target);
-  const dampForce = -damping * velocity;
-  const nextVel = velocity + (force + dampForce) * delta;
-  const nextPos = current + nextVel * delta;
-  return { position: nextPos, velocity: nextVel };
-}
