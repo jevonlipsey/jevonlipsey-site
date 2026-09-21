@@ -116,13 +116,13 @@ const projects = [
   <section class="home-section" aria-labelledby="systems-title">
     <div class="section-heading">
       <h2 id="systems-title">software &amp; systems</h2>
-      <a class="ink-bleed-link" href="/demos">systems &amp; demos ↗</a>
+      <a class="ink-bleed-link" href="/projects">projects ↗</a>
     </div>
     <div class="project-grid">
       {projects.map((project) => (
         <article class="project-card relative">
           <!-- dedicated stretched-link hit area for the entire card -->
-          <a href={project.link} target="_blank" rel="noreferrer" class="absolute inset-0 z-10" aria-label={`Open ${project.title}`}></a>
+          <a href={project.link} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${project.title}`}></a>
           <span class="project-metric">{project.metric}</span>
           <h3><a class="ink-bleed-link" href={project.link} target="_blank" rel="noreferrer">{project.title} ↗</a></h3>
           <p>{project.desc}</p>

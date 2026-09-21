@@ -29,10 +29,10 @@ const systems = [
 ];
 ---
 
-<Layout title="Demos & Systems | Jevon Lipsey" description="Interactive systems, WebGL experiments, and ubiquitous computing by Jevon Lipsey.">
+<Layout title="Projects | Jevon Lipsey" description="Interactive systems, WebGL experiments, and ubiquitous computing by Jevon Lipsey.">
   <div class="space-y-12">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Systems &amp; Demos</h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Projects</h1>
       <p class="text-base text-muted-foreground">
         Interactive software systems, WebGL experiments, and hardware interfaces.
       </p>
@@ -41,7 +41,9 @@ const systems = [
     <div class="space-y-8">
       <div class="space-y-6">
         {systems.map((item) => (
-          <article class="project-card">
+          <article class="project-card relative">
+            <!-- dedicated stretched-link hit area for the entire card -->
+            <a href={item.link} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${item.title}`}></a>
             <div class="flex flex-wrap items-baseline justify-between gap-4 mb-1">
               <h3 class="text-foreground">
                 {item.title}

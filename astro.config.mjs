@@ -19,5 +19,9 @@ export default defineConfig({
     },
   },
 
-  integrations: [react(), sitemap()]
+  integrations: [react(), sitemap()],
+
+  redirects: {
+    '/demos': '/projects',
+  },
 });

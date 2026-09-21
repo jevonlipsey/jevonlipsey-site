@@ -472,6 +472,18 @@ button { cursor: pointer; }
   box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 16px 36px -4px rgba(0, 0, 0, 0.22);
 }
 .project-card:nth-child(even) { margin-top: 32px; }
+/* hotspot: whole card is a hit target. it must paint ABOVE the non-positioned
+   text/tags (a z-auto absolute overlay gets buried under them), so nothing
+   else gets a z-index in markup except real links, which lift above it */
+.project-card > a.card-hit-area {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+.project-card a:not(.card-hit-area) {
+  position: relative;
+  z-index: 3;
+}
 .project-card h3 { font-size: clamp(24px, 3vw, 36px); line-height: 1.05; font-weight: 550; letter-spacing: -0.05em; margin-bottom: 16px; }
 .project-card h3 a {
   display: inline-block;

@@ -7,22 +7,31 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
-import { damp, smoothstep, tourYaw } from "../lib/hero-motion";
+import { damp, smoothstep } from "../lib/hero-motion";
 
 // cache the decoded GLB so the model survives hot reloads and re-mounts
 THREE.Cache.enabled = true;
 
+function wrapAngle(radians: number) {
+  return ((radians + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+}
+
 const HalftoneDitherShader = {
   uniforms: {
     tDiffuse: { value: null },
-    resolution: { value: new THREE.Vector2(typeof window !== 'undefined' ? window.innerWidth : 1920, typeof window !== 'undefined' ? window.innerHeight : 1080) },
-    gridSize: { value: 12.0 },        // Punchier dot size for true editorial print look
+    resolution: {
+      value: new THREE.Vector2(
+        typeof window !== "undefined" ? window.innerWidth : 1920,
+        typeof window !== "undefined" ? window.innerHeight : 1080,
+      ),
+    },
+    gridSize: { value: 12.0 }, // Punchier dot size for true editorial print look
     patternAngle: { value: 0.7853 }, // 45° halftone screen angle
-    strength: { value: 0.75 },       // Punchier contrast between ink and paper
-    highlightGain: { value: 1.4 },   // Highlight multiplier (lower in dark mode)
-    fadeProgress: { value: 0.0 },   // Controlled entrance fade
-    neckFadeStart: { value: 0.28 },  // Screen Y bottom threshold where fade begins
-    neckFadeEnd: { value: 0.12 },    // Screen Y threshold where it dissolves
+    strength: { value: 0.75 }, // Punchier contrast between ink and paper
+    highlightGain: { value: 1.4 }, // Highlight multiplier (lower in dark mode)
+    fadeProgress: { value: 0.0 }, // Controlled entrance fade
+    neckFadeStart: { value: 0.28 }, // Screen Y bottom threshold where fade begins
+    neckFadeEnd: { value: 0.12 }, // Screen Y threshold where it dissolves
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -69,7 +78,10 @@ const HalftoneDitherShader = {
 
       // Distinct dot thresholds
       float dotRadius = clamp(sqrt(luma) * 0.52, 0.05, 0.48);
-      float dotMask = smoothstep(dotRadius + 0.06, dotRadius - 0.06, distToCenter);
+      // hardware-derivative AA: always a one-pixel ramp, no moire banding on
+      // high-dpi or low-res screens
+      float delta = fwidth(distToCenter) * 1.25;
+      float dotMask = smoothstep(dotRadius + delta, dotRadius - delta, distToCenter);
 
       // Contrast ink styling
       vec3 patternColor = mix(texColor.rgb * 0.25, texColor.rgb * highlightGain, dotMask);
@@ -133,6 +145,12 @@ export default function ImmersiveScene() {
     }
 
     let cameraBaseZ = 5.8;
+    let framingScale = 1.75;
+    let camZ = 5.8;
+    let layout: "mobile" | "portrait" | "landscape" = "landscape";
+    let targetLayoutScale = 1.75;
+    let targetLayoutY = 0.04;
+    let layoutApplied = false;
     let entranceStart = -1;
     let fadeStart = -1;
     let disposed = false;
@@ -191,18 +209,16 @@ export default function ImmersiveScene() {
     // nudge the head right so its left silhouette slices through the text edge
     const modelOffsetX = 0.1;
 
-    let mode: "GAZE" | "SHOWCASE" = "GAZE";
     let lastActivity = performance.now();
-    let nextTourDelay = 25000 + Math.random() * 5000;
-    let tourStart = 0;
-    let tourFrom = 0;
     let spinYaw = 0;
+    let spinPitch = 0;
     let spinVelocity = 0;
     let pointerId: number | null = null;
     let gesture: "pending" | "spin" | "scroll" = "pending";
     let startX = 0;
     let startY = 0;
     let previousX = 0;
+    let previousY = 0;
     let previousTime = 0;
     let maxDisplacement = 0;
     let curYaw = 0;
@@ -219,11 +235,6 @@ export default function ImmersiveScene() {
     let targetAutoX = 0;
     let targetAutoY = 0;
     let nextSaccadeTime = performance.now() + 1200;
-    let gazeWeight = 1;
-    let weightFrom = 1;
-    let weightTo = 1;
-    let weightStart = performance.now();
-    let weightDuration = 800;
     let scrollY = 0;
     let scrollVelocity = 0;
     let scrollBias = 0;
@@ -257,27 +268,8 @@ export default function ImmersiveScene() {
       autoGazeY = damp(autoGazeY, targetAutoY, dt, 3.2);
     }
 
-    function rampGaze(target: number, now: number) {
-      weightFrom = gazeWeight;
-      weightTo = target;
-      weightStart = now;
-      weightDuration = target === 0 ? 350 : 800;
-    }
-
-    function setMode(next: "GAZE" | "SHOWCASE", now: number) {
-      mode = next;
-      container!.dataset.motionMode = next;
-      rampGaze(next === "GAZE" ? 1 : 0, now);
-    }
-
     function interrupt(now = performance.now()) {
       lastActivity = now;
-      if (mode === "SHOWCASE") {
-        // preserve the rendered angle when ownership returns to manual motion.
-        spinYaw = spinGroup.rotation.y;
-        spinVelocity = 0;
-        setMode("GAZE", now);
-      }
       wake();
     }
 
@@ -296,11 +288,9 @@ export default function ImmersiveScene() {
 
       if (dark) {
         ditherPass.uniforms.strength.value = 0.75;
-        ditherPass.uniforms.gridSize.value = 12.0;
         ditherPass.uniforms.highlightGain.value = 0.95;
       } else {
         ditherPass.uniforms.strength.value = 0.65;
-        ditherPass.uniforms.gridSize.value = 11.0;
         ditherPass.uniforms.highlightGain.value = 1.4;
       }
 
@@ -322,22 +312,22 @@ export default function ImmersiveScene() {
       const height = container!.clientHeight;
       if (!width || !height) return;
       const aspect = width / height;
+      // hysteresis: hold the current frame layout while the viewport wiggles
+      // around the 1:1 toggle (mobile toolbars animate this during page down)
+      if (height < 500) layout = "mobile";
+      else if (aspect < 0.95) layout = "portrait";
+      else if (aspect > 1.05) layout = "landscape";
       const shortViewport = height < 500;
-      const isPortrait = aspect < 1.0;
-      const targetScale = shortViewport ? 0.9 : isPortrait ? 1.4 : 1.75;
-      framingGroup.scale.setScalar(targetScale);
-      const targetY = shortViewport ? 0.04 : isPortrait ? -0.05 : 0.04;
-      framingGroup.position.set(modelOffsetX, targetY, 0);
+      targetLayoutScale = shortViewport ? 0.9 : layout === "portrait" ? 1.4 : 1.75;
+      targetLayoutY = shortViewport ? 0.04 : layout === "portrait" ? -0.05 : 0.04;
       camera.aspect = aspect;
       const fitWidth =
-        (shortViewport ? 1.1 : isPortrait ? 1.4 : 1.85) /
+        (shortViewport ? 1.1 : layout === "portrait" ? 1.4 : 1.85) /
         (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * aspect);
       cameraBaseZ = Math.max(
-        shortViewport ? 3.6 : isPortrait ? 4.4 : 5.8,
+        shortViewport ? 3.6 : layout === "portrait" ? 4.4 : 5.8,
         fitWidth,
       );
-      camera.position.set(0, targetY, cameraBaseZ + entranceOffset());
-      camera.lookAt(0, targetY, 0);
       camera.updateProjectionMatrix();
       const pixelRatio = Math.min(window.devicePixelRatio, 2);
       renderer.setPixelRatio(pixelRatio);
@@ -345,8 +335,31 @@ export default function ImmersiveScene() {
       composer.setPixelRatio(pixelRatio);
       composer.setSize(width, height);
       bloomPass.resolution.set(width * pixelRatio, height * pixelRatio);
-      ditherPass.uniforms.resolution.value.set(width * pixelRatio, height * pixelRatio);
+      ditherPass.uniforms.resolution.value.set(
+        width * pixelRatio,
+        height * pixelRatio,
+      );
+      // dot spacing in css pixels grows mildly with screen size (~3.2px phone,
+      // ~6px desktop), then pixelRatio bumps to device pixels so a retina
+      // panel gets the same crisp frequency instead of capped big cells
+      const dotCss = THREE.MathUtils.clamp(
+        width * 0.0026 + 2.15,
+        3.0,
+        7.5,
+      );
+      ditherPass.uniforms.gridSize.value = dotCss * pixelRatio;
       stipplePixelRatio.value = pixelRatio;
+      if (!layoutApplied) {
+        // first paint places the camera directly; every later resize only
+        // updates targets and lets the animate loop blend the motion
+        layoutApplied = true;
+        framingScale = targetLayoutScale;
+        framingGroup.scale.setScalar(framingScale);
+        framingGroup.position.y = targetLayoutY;
+        camZ = cameraBaseZ + entranceOffset();
+        camera.position.set(0, targetLayoutY, camZ);
+        camera.lookAt(0, targetLayoutY, 0);
+      }
       wake();
     }
 
@@ -509,7 +522,7 @@ export default function ImmersiveScene() {
       pointerId = event.pointerId;
       gesture = "pending";
       startX = previousX = event.clientX;
-      startY = event.clientY;
+      startY = previousY = event.clientY;
       previousTime = performance.now();
       maxDisplacement = 0;
       spinVelocity = 0;
@@ -517,30 +530,37 @@ export default function ImmersiveScene() {
 
     function onPointerMove(event: PointerEvent) {
       if (!event.isPrimary) return;
-      const now = performance.now();
-      interrupt(now);
+      interrupt();
       if (event.pointerId !== pointerId) return;
       const dx = event.clientX - startX;
       const dy = event.clientY - startY;
       maxDisplacement = Math.max(maxDisplacement, Math.hypot(dx, dy));
       if (gesture === "pending") {
-        if (Math.abs(dy) > Math.abs(dx)) gesture = "scroll";
-        else if (Math.abs(dx) > Math.abs(dy) + 8) {
+        // vertical touch drags keep scrolling the page; mouse drags rotate on
+        // both axes once the pointer has committed past the click threshold
+        if (event.pointerType === "touch" && Math.abs(dy) > Math.abs(dx)) {
+          gesture = "scroll";
+        } else if (maxDisplacement >= 6) {
           gesture = "spin";
           container!.setPointerCapture(event.pointerId);
         }
       }
       if (gesture === "spin") {
-        const movement = event.clientX - previousX;
-        spinYaw += movement * 0.009;
-        spinVelocity = THREE.MathUtils.clamp(
-          (movement * 0.009) / Math.max((now - previousTime) / 1000, 0.008),
-          -5,
-          5,
+        const nowMs = performance.now();
+        const dt = Math.max((nowMs - previousTime) / 1000, 0.008);
+        const moveX = event.clientX - previousX;
+        const moveY = event.clientY - previousY;
+        spinYaw += moveX * 0.005;
+        spinPitch = THREE.MathUtils.clamp(
+          spinPitch + moveY * 0.004,
+          -0.5,
+          0.5,
         );
+        spinVelocity = THREE.MathUtils.clamp(moveX * 0.005 / dt, -20, 20);
       }
       previousX = event.clientX;
-      previousTime = now;
+      previousY = event.clientY;
+      previousTime = performance.now();
     }
 
     function onPointerUp(event: PointerEvent) {
@@ -614,6 +634,7 @@ export default function ImmersiveScene() {
       { passive: true, signal },
     );
     container.addEventListener("pointerdown", onPointerDown, { signal });
+    container.addEventListener("pointermove", onPointerMove, { signal });
     window.addEventListener("pointerup", onPointerUp, { signal });
     window.addEventListener("pointercancel", onPointerUp, { signal });
     // freeze gaze while the theme toggle is clicked so the head doesn't
@@ -732,60 +753,34 @@ export default function ImmersiveScene() {
       const reduced = reducedMotion.matches;
       if (!reduced) mixer?.update(delta);
 
-      if (entranceStart >= 0) {
-        const offset = entranceOffset();
-        camera.position.z = cameraBaseZ + offset;
-        camera.lookAt(0, camera.position.y, 0);
-      }
-
       updateAutonomousGaze(now, delta);
 
       const target = hoverTarget || focusTarget;
       const stillFor = now - lastActivity;
-      if (
-        !reduced &&
-        model &&
-        mode === "GAZE" &&
-        pointerId === null &&
-        !target &&
-        stillFor > nextTourDelay
-      ) {
-        tourStart = now;
-        tourFrom = spinYaw;
-        setMode("SHOWCASE", now);
-      }
-      if (mode === "SHOWCASE") {
-        const t = (now - tourStart) / 1000;
-        spinYaw = tourYaw(t, tourFrom);
-        if (t >= 6.7) {
-          spinYaw = 0;
-          spinVelocity = 0;
-          lastActivity = now;
-          nextTourDelay = 25000 + Math.random() * 5000;
-          setMode("GAZE", now);
-        }
-      } else if (pointerId === null) {
+
+      // momentum coast: the model keeps gliding a beat after the pointer lifts,
+// then eases back to facing front so the autonomous gaze/hover/scroll all
+// relink to a coherent heading; hold the button to keep inspecting the back
+      if (pointerId === null) {
         spinYaw += (spinVelocity * (1 - Math.exp(-5 * delta))) / 5;
         spinVelocity *= Math.exp(-5 * delta);
-        spinYaw = damp(spinYaw, 0, delta, 2.6);
+        if (Math.abs(spinVelocity) < 0.25) {
+          const home = spinYaw - wrapAngle(spinYaw);
+          spinYaw = damp(spinYaw, home, delta, 2.2);
+          spinPitch = damp(spinPitch, 0, delta, 2.2);
+        }
       }
       spinGroup.rotation.y = spinYaw;
-      gazeWeight = THREE.MathUtils.lerp(
-        weightFrom,
-        weightTo,
-        smoothstep((now - weightStart) / weightDuration),
-      );
+      spinGroup.rotation.x = spinPitch;
 
       // scroll parallax: depth along Z, tilt down, and subtle elevation
-      const aspect = container!.clientWidth / container!.clientHeight;
-      const isPortrait = aspect < 1.0;
       const scrollTilt = -scrollRatio * 0.35;
       const scrollZ = -scrollRatio * 2.0;
       const scrollYOffset = scrollRatio * 0.45;
       framingGroup.position.x = modelOffsetX;
       framingGroup.position.y = damp(
         framingGroup.position.y,
-        reduced ? 0 : (isPortrait ? -0.05 : 0.04) + scrollYOffset,
+        reduced ? 0 : targetLayoutY + scrollYOffset,
         delta,
         4,
       );
@@ -801,6 +796,14 @@ export default function ImmersiveScene() {
         delta,
         4,
       );
+      // layout transitions (window resize, collapsing mobile browser chrome)
+      // blend through the dampers instead of snapping, so the view never
+      // lurches toward a hard-set center as the page nears its end
+      framingScale = damp(framingScale, targetLayoutScale, delta, 3);
+      framingGroup.scale.setScalar(framingScale);
+      camZ = damp(camZ, cameraBaseZ + entranceOffset(), delta, 3);
+      camera.position.set(0, targetLayoutY, camZ);
+      camera.lookAt(0, targetLayoutY, 0);
 
       // organic micro-drift and breathing
       const breathX =
@@ -815,7 +818,10 @@ export default function ImmersiveScene() {
 
       let x = 0;
       let y = 0;
-      if (target) {
+      if (pointerId !== null) {
+        // a grab owns the orientation: ease the face back to body-neutral so
+        // the spin is read clearly instead of counter-tracked by gaze
+      } else if (target) {
         const rect = target.getBoundingClientRect();
         x = THREE.MathUtils.clamp(
           ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1,
@@ -830,10 +836,8 @@ export default function ImmersiveScene() {
       } else if (hasRealCursor) {
         // active global mouse gaze tracking down the page with subtle organic breath
         const mouseIdle = smoothstep((stillFor - 3000) / 1500);
-        x =
-          THREE.MathUtils.lerp(smoothCursorX, autoGazeX, mouseIdle) + breathX;
-        y =
-          THREE.MathUtils.lerp(smoothCursorY, autoGazeY, mouseIdle) + breathY;
+        x = THREE.MathUtils.lerp(smoothCursorX, autoGazeX, mouseIdle) + breathX;
+        y = THREE.MathUtils.lerp(smoothCursorY, autoGazeY, mouseIdle) + breathY;
       } else {
         x = autoGazeX + breathX;
         y = autoGazeY + breathY;
@@ -843,27 +847,31 @@ export default function ImmersiveScene() {
       // the head bows forward to read the papers instead of staring dead-ahead
       const scrollProgress = Math.min(scrollY / 600, 1);
       const scrollPitch = scrollProgress * 0.45;
-      const cursorPitch = y < 0 ? y * 0.5 : y * 0.25;
+      // a cursor hugging the top of the viewport must outscale the scroll
+      // bias, otherwise the head is locked looking down once scrolled past
+      // 600px and can never tilt back up toward interactive elements
+      const cursorPitch = y < 0 ? y * 0.5 : y * 0.85;
 
+      // the gaze is a subtle overlay on the drag-set heading: mouse-left always
+      // reads as a glance left, never as a mysterious spin to the back
       const targetYaw = reduced
         ? 0
-        : THREE.MathUtils.clamp(x * 0.58, -0.55, 0.55);
+        : THREE.MathUtils.clamp(x * 0.65, -0.65, 0.65);
+      // an active hover/focus target overrides the passive scroll pitch so the
+      // robot actually looks at the element instead of fighting its clamp
+      const activePitch = target ? -y * 0.45 : scrollPitch - cursorPitch;
       const targetPitch = reduced
         ? 0
-        : THREE.MathUtils.clamp(
-            scrollPitch - cursorPitch,
-            -0.3,
-            0.6,
-          );
+        : THREE.MathUtils.clamp(activePitch, -0.45, 0.55);
       const targetRoll = reduced
         ? 0
         : target
           ? 0.04
           : -targetYaw * 0.08 + Math.sin(elapsed * 0.6) * 0.015;
 
-      curYaw = damp(curYaw, targetYaw, delta, 7.5 * gazeWeight);
-      curPitch = damp(curPitch, targetPitch, delta, 7.5 * gazeWeight);
-      curRoll = damp(curRoll, targetRoll, delta, 7.5 * gazeWeight);
+      curYaw = damp(curYaw, targetYaw, delta, 7.5);
+      curPitch = damp(curPitch, targetPitch, delta, 7.5);
+      curRoll = damp(curRoll, targetRoll, delta, 7.5);
       scrollVelocity *= Math.exp(-8 * delta);
       scrollBias = damp(scrollBias, scrollVelocity * 2, delta, 5);
       modelGroup.rotation.set(curPitch + scrollBias, curYaw, curRoll);
@@ -883,7 +891,6 @@ export default function ImmersiveScene() {
       frame = requestAnimationFrame(animate);
     }
 
-    container.dataset.motionMode = mode;
     resize();
     applyTheme();
     return () => {
@@ -920,7 +927,7 @@ export default function ImmersiveScene() {
             />
           </div>
           <span className="boot-text">
-            // ASSEMBLING... [ {Math.round(loadProgress * 100)}% ]
+            ASSEMBLING... [ {Math.round(loadProgress * 100)}% ]
           </span>
         </div>
       )}
