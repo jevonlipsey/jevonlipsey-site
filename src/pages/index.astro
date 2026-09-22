@@ -71,7 +71,7 @@ const featuredProjects = (await getCollection('projects'))
           <div class="publication-meta flex flex-wrap gap-x-3 gap-y-1 items-center">
             <span class="pub-year font-mono text-xs text-neutral-400">{paper.data.year}</span>
             {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge, i) => (
-              <span key={i} class="venue-badge font-mono text-xs text-neutral-400" title={paper.data.venue}>{badge}</span>
+              <span class="venue-badge font-mono text-xs text-neutral-400" title={paper.data.venue}>{badge}</span>
             ))}
             {paper.data.status === 'in-review' && <span class="status-badge font-mono text-xs text-amber-400/90">[under review]</span>}
           </div>

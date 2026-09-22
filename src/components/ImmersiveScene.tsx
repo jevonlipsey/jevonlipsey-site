@@ -879,10 +879,20 @@ export default function ImmersiveScene() {
       let x = 0;
       let y = 0;
       if (pointerId !== null) {
-        // a grab owns the orientation: ease the face back to body-neutral, and
-        // drop any lingering hover glide so the next hover re-locks cleanly
+        // a grab owns the orientation: pin the gaze to the cursor for the whole
+        // hold (no idle blend back to center while the button is down), and
+        // drop any lingering hover glide so the next hover re-locks cleanly.
+        // touch scroll-drags keep drifting autonomously instead of staring at
+        // a stale desktop cursor position
         hoverGazeX = null;
         hoverGazeY = null;
+        if (gesture === 'scroll') {
+          x = autoGazeX + breathX;
+          y = autoGazeY + breathY;
+        } else {
+          x = smoothCursorX + breathX;
+          y = smoothCursorY + breathY;
+        }
       } else if (target) {
         // hover gaze rides a damped glide between the tightly-packed research
         // links so hopping element-to-element eases the eyes instead of snapping
