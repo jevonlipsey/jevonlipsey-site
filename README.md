@@ -1,4 +1,6 @@
-# jevonlipsey.com
+<h1 align="center">
+  <a href="https://jevonlipsey.com">jevonlipsey.com</a>
+</h1>
 
 ![og image](public/og.png)
 
