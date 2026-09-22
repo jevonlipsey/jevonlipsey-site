@@ -1,5 +1,5 @@
 ---
-title: "Featherweight"
+title: "featherweight"
 tech: ["fastapi", "playwright", "vue.js", "sqlite"]
 desc: "Full-stack platform that transforms eBird raw sighting frequency data into seasonal observation-likelihood rankings for birders."
 links:

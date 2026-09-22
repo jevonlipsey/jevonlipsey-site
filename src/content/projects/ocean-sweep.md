@@ -1,5 +1,5 @@
 ---
-title: "Ocean Sweep"
+title: "ocean sweep"
 tech: ["three.js", "mediapipe", "micro:bit", "flask"]
 desc: "Interactive 3D ocean cleanup simulation combining physical accelerometer steering via Micro:bit with computer vision gesture detection."
 links:

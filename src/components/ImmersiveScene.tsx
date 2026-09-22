@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -102,6 +103,9 @@ const HalftoneDitherShader = {
 const INTERACTIVE_TARGETS =
   'nav a, header a, a[href*="github"], a[href*="scholar"], a[href*="cv"], a[href*="mailto"], .pub-card, .project-card, #theme-toggle';
 
+// boot ring sweeps from empty to full around a 36px viewBox, r = 15.5
+const RING_CIRCUMFERENCE = 2 * Math.PI * 15.5;
+
 function disposeModel(root: THREE.Object3D) {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
@@ -126,6 +130,32 @@ export default function ImmersiveScene() {
   const [status, setStatus] = useState("loading");
   const [loadProgress, setLoadProgress] = useState(0);
   const [booted, setBooted] = useState(false);
+  const [gyroOn, setGyroOn] = useState(false);
+  const [gyroSupported, setGyroSupported] = useState(false);
+  // the gyro listener writes into this ref and the animate loop reads it, so
+  // the permission toggle (React scope) and the RAF loop (effect scope) share
+  // state without wiring listeners through React
+  const sceneMotion = useRef({ active: false, ox: 0, oy: 0 });
+  const gyroAttached = useRef(false);
+  const signalRef = useRef<AbortSignal | null>(null);
+  const handleOrientationRef =
+    useRef<((event: DeviceOrientationEvent) => void) | null>(null);
+
+  useEffect(() => {
+    // a phone shows the button, a mouse never does. iPhone Safari matches
+    // (pointer: coarse) reliably, but OR-ing in every touch signal keeps it
+    // robust if any single check misbehaves; the api presence is the real gate
+    const touches =
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0 ||
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(any-pointer: coarse)").matches;
+    const hasApi = "DeviceOrientationEvent" in window;
+    // ?gyro=1 forces the chip on any device, for hand-held debugging when a
+    // phone still reports no button
+    const forced = new URLSearchParams(window.location.search).has("gyro");
+    if (forced || (touches && hasApi)) setGyroSupported(true);
+  }, []);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -163,6 +193,7 @@ export default function ImmersiveScene() {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const controller = new AbortController();
     const { signal } = controller;
+    signalRef.current = signal;
     const scene = new THREE.Scene();
     const fog = new THREE.FogExp2(0x000000, 0.025);
     scene.fog = fog;
@@ -234,6 +265,8 @@ export default function ImmersiveScene() {
     let cursorEventX = 0;
     let cursorEventY = 0;
     let cursorEventAt = 0;
+    let gyroSmoothX = 0;
+    let gyroSmoothY = 0;
     let hoverGazeX: number | null = null;
     let hoverGazeY: number | null = null;
     let lastHoverAt = 0;
@@ -281,6 +314,16 @@ export default function ImmersiveScene() {
       lastActivity = now;
       wake();
     }
+
+    handleOrientationRef.current = (event: DeviceOrientationEvent) => {
+      const gamma = event.gamma ?? 0;
+      const beta = event.beta;
+      // gamma: left/right roll, ~±30° is the practical tilt range
+      sceneMotion.current.ox = THREE.MathUtils.clamp(gamma / 30, -1, 1);
+      // beta centers around 45°, the natural phone-holding pitch; level = 0
+      sceneMotion.current.oy =
+        beta === null ? 0 : THREE.MathUtils.clamp((beta - 45) / 30, -1, 1);
+    };
 
     // animation principle: big gaze retargets must ease in (bounded start
     // speed) and ease out (exponential settle near the target) rather than
@@ -577,6 +620,13 @@ export default function ImmersiveScene() {
       const dx = event.clientX - startX;
       const dy = event.clientY - startY;
       maxDisplacement = Math.max(maxDisplacement, Math.hypot(dx, dy));
+      if (event.pointerType === "touch") {
+        // gaze rides the finger just like the mouse: same screen-space
+        // normalize, same smooth chase. vertical swipes still scroll because
+        // touch-action: pan-y hands the stream to the browser (pointercancel)
+        cursorX = (event.clientX / window.innerWidth) * 2 - 1;
+        cursorY = 1 - (event.clientY / window.innerHeight) * 2;
+      }
       if (gesture === "pending") {
         // vertical touch drags keep scrolling the page; mouse drags rotate on
         // both axes once the pointer has committed past the click threshold
@@ -777,7 +827,12 @@ export default function ImmersiveScene() {
       if (disposed || document.hidden) return;
 
       if (fadeStart >= 0) {
-        const fadeT = (now - fadeStart) / 2500;
+        // dark fades up from black slowly; light must reveal fast or the
+        // low-alpha robot ghosts white over the bright page for ~2s
+        const fadeMs = document.documentElement.classList.contains("dark")
+          ? 2500
+          : 350;
+        const fadeT = (now - fadeStart) / fadeMs;
         ditherPass.uniforms.fadeProgress.value = Math.min(fadeT, 1.0);
         if (fadeT >= 1.0) fadeStart = -1;
       }
@@ -887,17 +942,11 @@ export default function ImmersiveScene() {
         // a grab owns the orientation: pin the gaze to the cursor for the whole
         // hold (no idle blend back to center while the button is down), and
         // drop any lingering hover glide so the next hover re-locks cleanly.
-        // touch scroll-drags keep drifting autonomously instead of staring at
-        // a stale desktop cursor position
+        // touch feeds the cursor too, so touch drags pin just like the mouse
         hoverGazeX = null;
         hoverGazeY = null;
-        if (gesture === 'scroll') {
-          x = autoGazeX + breathX;
-          y = autoGazeY + breathY;
-        } else {
-          x = smoothCursorX + breathX;
-          y = smoothCursorY + breathY;
-        }
+        x = smoothCursorX + breathX;
+        y = smoothCursorY + breathY;
       } else if (target) {
         // hover gaze rides a damped glide between the tightly-packed research
         // links so hopping element-to-element eases the eyes instead of snapping
@@ -941,6 +990,20 @@ export default function ImmersiveScene() {
         x = autoGazeX + breathX;
         y = autoGazeY + breathY;
       }
+
+      // device-parallax: phone tilt nudges the gaze on top of whatever source
+      // drives it (auto, hover, or finger), eased by the same damp so raw
+      // sensor jitter never reaches the head. damping back to zero on toggle
+      // off makes leaving parallax a glide, not a snap
+      if (!isTrackingPaused && !reduced && sceneMotion.current.active) {
+        gyroSmoothX = damp(gyroSmoothX, sceneMotion.current.ox, delta, 5);
+        gyroSmoothY = damp(gyroSmoothY, sceneMotion.current.oy, delta, 5);
+      } else {
+        gyroSmoothX = damp(gyroSmoothX, 0, delta, 3);
+        gyroSmoothY = damp(gyroSmoothY, 0, delta, 3);
+      }
+      x += gyroSmoothX * 0.5;
+      y += gyroSmoothY * 0.5;
 
       // strong scroll-driven downward bias: as the user scrolls into research,
       // the head bows forward to read the papers instead of staring dead-ahead
@@ -1011,6 +1074,55 @@ export default function ImmersiveScene() {
     };
   }, []);
 
+  async function toggleGyro() {
+    if (sceneMotion.current.active) {
+      sceneMotion.current.active = false;
+      setGyroOn(false);
+      return;
+    }
+    // iOS Safari needs a permission prompt inside the tap gesture; Android
+    // and desktop sensors just start streaming
+    const DEO = (
+      window as unknown as {
+        DeviceOrientationEvent?: { requestPermission?: () => Promise<string> };
+      }
+    ).DeviceOrientationEvent;
+    if (typeof DEO?.requestPermission === "function") {
+      try {
+        const res = await DEO.requestPermission();
+        if (res !== "granted") {
+          console.warn("DeviceOrientation permission not granted:", res);
+          return;
+        }
+      } catch (err) {
+        console.error("DeviceOrientation error:", err);
+        if (
+          window.location.protocol !== "https:" &&
+          window.location.hostname !== "localhost"
+        ) {
+          alert("iOS requires HTTPS to enable gyro sensors. Test via Cloudflare HTTPS.");
+        }
+        return;
+      }
+    }
+    const handler = handleOrientationRef.current;
+    if (handler && !gyroAttached.current) {
+      // attach with the scene's abort signal so unmount teardown removes it
+      const sig = signalRef.current;
+      if (sig) window.addEventListener("deviceorientation", handler, { signal: sig });
+      gyroAttached.current = true;
+    }
+    sceneMotion.current.active = true;
+    setGyroOn(true);
+  }
+
+  // the chip renders in flow inside .hero-links, aligned with the other links,
+  // not floating over the page; index.astro ships the empty slot it mounts into
+  const heroSlot =
+    gyroSupported && typeof document !== "undefined"
+      ? document.getElementById("hero-links-slot")
+      : null;
+
   return (
     <div className="robot-stage" data-status={status}>
       <div
@@ -1020,21 +1132,37 @@ export default function ImmersiveScene() {
       />
       {!booted && status !== "unavailable" && (
         <div className="boot-loader" role="status" aria-live="polite">
-          <div className="boot-track">
-            <div
-              className="boot-beam"
-              style={{ transform: `scaleX(${loadProgress})` }}
+          <svg className="boot-ring" viewBox="0 0 36 36" aria-hidden="true">
+            <circle className="boot-ring-track" cx="18" cy="18" r="15.5" />
+            <circle
+              className="boot-ring-fill"
+              cx="18"
+              cy="18"
+              r="15.5"
+              style={{
+                strokeDashoffset: RING_CIRCUMFERENCE * (1 - loadProgress),
+              }}
             />
-          </div>
-          <span className="boot-text">
-            ASSEMBLING... [ {Math.round(loadProgress * 100)}% ]
-          </span>
+          </svg>
+          <span className="boot-text">[ {Math.round(loadProgress * 100)}% ]</span>
         </div>
       )}
       {status === "unavailable" && (
         <p className="scene-status" role="status">
           [ 3D PREVIEW UNAVAILABLE ]
         </p>
+      )}
+      {heroSlot && createPortal(
+        <button
+          type="button"
+          className={`gyro-toggle${gyroOn ? " gyro-toggle--active" : ""}`}
+          onClick={toggleGyro}
+          aria-pressed={gyroOn}
+          aria-label="Toggle gyroscope gaze"
+        >
+          [gyro: {gyroOn ? "active" : "off"}]
+        </button>,
+        heroSlot,
       )}
     </div>
   );

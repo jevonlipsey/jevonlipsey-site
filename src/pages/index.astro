@@ -43,11 +43,13 @@ const featuredProjects = (await getCollection('projects'))
         <a class="ink-bleed-link" href={SITE.links.github} target="_blank" rel="noreferrer">github ↗</a>
         <a class="ink-bleed-link" href={SITE.links.scholar} target="_blank" rel="noreferrer">scholar ↗</a>
         <a class="ink-bleed-link" href={`mailto:${SITE.emails.personal}`}>email ↗</a>
+        <!-- gyro chip portals into this slot from immersive scene (touch devices only) -->
+        <span id="hero-links-slot"></span>
       </div>
     </div>
   </section>
   <!-- about section -->
-  <div class="research-intro relative group hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-2xl p-6 -mx-6 reveal" style="--i: 0">
+  <div class="research-intro relative group reveal" style="--i: 0">
     <a href="/about" class="absolute inset-0 z-10" aria-label="Read more about Jevon Lipsey"></a>
     <span class="about-label flex justify-between items-center w-full">
       about
