@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import BibtexButton from '../components/BibtexButton';
 import StatusBadge from '../components/StatusBadge.astro';
+import { intro } from '../lib/snippets';
 const sortedPubs = (await getCollection('research')).sort((a, b) => b.data.year - a.data.year);
 ---
 
@@ -30,7 +31,7 @@ const sortedPubs = (await getCollection('research')).sort((a, b) => b.data.year 
               <span>{/lipsey/i.test(author) ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < pub.data.authors.length - 1 && ', '}</span>
             ))}
           </p>
-          <p class="text-sm text-muted-foreground leading-relaxed">{pub.data.abstract}</p>
+          <p class="text-sm text-muted-foreground leading-relaxed">{intro(pub.data.abstract)}</p>
           <div class="publication-actions">
             <a href={`/research/${pub.id}`} class="ink-bleed-link">[read paper summary]</a>
             {pub.data.pdf && <a href={pub.data.pdf} target="_blank" rel="noreferrer" class="ink-bleed-link">[pdf]</a>}

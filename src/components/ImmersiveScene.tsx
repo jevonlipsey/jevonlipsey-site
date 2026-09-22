@@ -320,9 +320,10 @@ export default function ImmersiveScene() {
       const beta = event.beta;
       // gamma: left/right roll, ~±30° is the practical tilt range
       sceneMotion.current.ox = THREE.MathUtils.clamp(gamma / 30, -1, 1);
-      // beta centers around 45°, the natural phone-holding pitch; level = 0
+      // beta centers around 45°, the natural phone-holding pitch; level = 0.
+      // negated so tilting the phone back looks up, tilting forward looks down
       sceneMotion.current.oy =
-        beta === null ? 0 : THREE.MathUtils.clamp((beta - 45) / 30, -1, 1);
+        beta === null ? 0 : -THREE.MathUtils.clamp((beta - 45) / 30, -1, 1);
     };
 
     // animation principle: big gaze retargets must ease in (bounded start

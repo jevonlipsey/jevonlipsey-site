@@ -6,6 +6,7 @@ import { getCollection } from 'astro:content';
 import BibtexButton from '../components/BibtexButton';
 import StatusBadge from '../components/StatusBadge.astro';
 import ProjectLinks from '../components/ProjectLinks.astro';
+import { intro } from '../lib/snippets';
 
 const sortedResearch = (await getCollection('research')).sort((a, b) => b.data.year - a.data.year);
 const recentThoughts = (await getCollection('thoughts'))
@@ -84,7 +85,7 @@ const featuredProjects = (await getCollection('projects'))
             <p class="publication-authors">{paper.data.authors.map((author, index) => (
               <span>{/lipsey/i.test(author) ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < paper.data.authors.length - 1 && ', '}</span>
             ))}</p>
-            <p class="publication-abstract">{paper.data.abstract}</p>
+            <p class="publication-abstract">{intro(paper.data.abstract)}</p>
             <div class="publication-actions relative z-20">
               <a class="ink-bleed-link" href={`/research/${paper.id}`}>[read note]</a>
               {paper.data.pdf && <a class="ink-bleed-link" href={paper.data.pdf} target="_blank" rel="noreferrer">[pdf]</a>}
