@@ -8,9 +8,11 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "prebuild": "npm run optimize:images",
     "check": "astro check",
     "test:motion": "node --experimental-strip-types --test scripts/hero-motion.test.mjs",
     "optimize:model": "node scripts/optimize-model.mjs",
+    "optimize:images": "node scripts/optimize-images.mjs",
     "og:generate": "node --experimental-strip-types scripts/generate-og.ts",
     "preview": "astro preview",
     "astro": "astro"

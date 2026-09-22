@@ -1,171 +1,91 @@
 # jevonlipsey.com
 
-Personal academic portfolio and systems laboratory for **Jevon Lipsey**, Computer Science Ph.D. student at Colorado School of Mines in the MIRROЯLab (advised by Dr. Tom Williams).
+![og image](public/og.png)
 
-An editorial academic portfolio with a wheatpaste print treatment and an interactive robotic head. Built with Astro 7, React islands, Three.js, Tailwind CSS 4, and TypeScript.
+personal academic portfolio for me! jevon lipsey (cs ph.d., colorado school of mines, mirrorlab).
+<div align="center">
+  <img src="https://img.shields.io/badge/Astro-v7-BC52EE?style=flat-square&logo=astro&logoColor=white" alt="Astro" />
+  <img src="https://img.shields.io/badge/React_Islands-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs&logoColor=white" alt="Three.js" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=FFD43B" alt="Python" />
+</div>
 
----
+## identity + links
 
-## 🧭 Site Structure & Routes
+everything identity lives in `src/site.config.ts` — site name, emails, github / scholar / cv / resume, socials. it feeds the hero, about page, navbar, footer, and og meta.
 
-- `/` &mdash; Editorial homepage: intro, selected research, selected projects, recent writing, and direct contact links.
-- `/research` &mdash; Full publications list (peer-reviewed papers, workshop articles, preprints).
-- `/research/[id]` &mdash; Individual paper notes, abstracts, author details, and BibTeX citations.
-- `/demos` &mdash; Systems, software tools, WebAssembly runtimes, and interactive demos.
-- `/thoughts` &mdash; Field notes, essays, and research logs.
-- `/thoughts/[id]` &mdash; Individual essays and notes rendered from Markdown.
-- `/about` &mdash; Extended bio, academic background, coordinates, and curriculum vitae download.
-- `/cv.pdf` &mdash; Direct static download of Jevon's CV.
+## content
 
----
+all content is markdown / mdx in `src/content/`. three collections:
 
-## 🛠️ How to Maintain & Update Content
+### research (`src/content/research/`)
 
-### 1. Adding a New Research Paper
+frontmatter: `title`, `venue`, `acronyms`, `year`, `status`, `authors`, `abstract`, `pdf?`, `code?`, `bibtex?`, `featured`
 
-Create a Markdown file in `src/content/research/<slug>.md`:
+- `acronyms` is the list of short venue chips rendered next to papers (e.g. `['HRI']`). falls back to the full `venue` string when empty.
+- `status` is one of: `published`, `in-review`, `accepted`, `camera-ready`, `workshop`, `best-paper`, `preprint`. badge labels live in `src/components/StatusBadge.astro` — add new states there, not in templates.
+- `featured: true` pins the paper on the homepage's selected research list.
 
-```markdown
----
-title: 'Your Paper Title Here'
-venue: "ACM/IEEE International Conference on Human-Robot Interaction (HRI '27)"
-year: 2027
-status: 'published' # 'published' | 'in-review' | 'preprint'
-authors:
-  - 'Jevon Lipsey'
-  - 'Tom Williams'
-abstract: 'A short 2-3 sentence overview of the research and findings.'
-pdf: 'https://link-to-paper-or-arxiv.org' # or '/papers/your-paper.pdf'
-code: 'https://github.com/jevonlipsey/repo'
-bibtex: |
-  @inproceedings{lipsey2027paper,
-    title={Your Paper Title Here},
-    author={Lipsey, Jevon and Williams, Tom},
-    booktitle={Proceedings of HRI},
-    year={2027}
-  }
-featured: true # Set to true to prioritize on the homepage
----
+### projects (`src/content/projects/`)
 
-## Summary & Notes
-Write any extended notes, methodology details, or figures here using standard Markdown.
+frontmatter: `title`, `desc`, `links`, `tech`, `metric?`, `featured`
+
+- `links` is a map with `github`, `demo`, `appstore`, `caseStudy` slots. each present slot renders as a bracketed action (`[source]`, `[demo]`, `[app store]`, `[case study]`). the card's primary target picks the first present slot in that order; `caseStudy` points at an in-site page, everything else opens a new tab.
+- `featured: true` shows the project on the homepage.
+
+### thoughts (`src/content/thoughts/`)
+
+frontmatter: `title`, `date`, `summary`, `tags`, `draft`
+
+- posts can be `.mdx` so you can import the editorial image component:
+
+```mdx
+<Figure
+  src="/thoughts/pepper1.webp"
+  alt="pepper in the lab"
+  size="md"
+  caption="some caption"
+/>
 ```
 
-Astro will automatically generate:
-- A new row on `/research`
-- An individual page at `/research/<slug>`
-- BibTeX clipboard modal integration
+`Figure` takes `size` (xs/sm/md/lg/full), `aspect` (auto/square/video/portrait), `align` (center/left/right), and strips `/public` prefixes.
 
----
+- tags link to `/thoughts?tag=x`, which pre-filters the archive (see `ThoughtsArchive.tsx`).
+- `draft: true` hides the post from `/thoughts` and the homepage.
 
-### 2. Adding a New Blog Post / Field Note
+## static assets (`public/`)
 
-Create a Markdown file in `src/content/thoughts/<slug>.md`:
+served at root. pdfs (`cv.pdf`, `lipsey-resume.pdf`), the robot model (`models/jev_cyborg.web.glb`), og / avatar / favicons. swap pdfs in place, no other step.
 
-```markdown
----
-title: 'Your Post Title'
-date: 2026-09-15
-summary: 'A short one-line summary of your essay or field note.'
-tags: ['hri', 'robotics', 'systems']
-draft: false # Set to true while drafting
----
+drop a `.png` / `.jpg` / `.jpeg` anywhere in `public/` and `npm run build` auto-converts it to `.webp` (q82, max 2000px wide) via the `prebuild` hook — references in `src/` are rewritten and the original is removed. run `npm run optimize:images` to do it without building. `og.png` is the one hard exclusion (hand-finished).
 
-Your essay or notes go here in Markdown. Supports headers, code snippets, lists, and links.
-```
-
-Astro will automatically render this on `/thoughts` and create a dedicated page at `/thoughts/<slug>`.
-
----
-
-### 3. Adding or Updating Demos & Projects
-
-The demos list lives in:
-- `src/pages/demos.astro` (the full grid of systems)
-- `src/pages/index.astro` (the top 3 selected projects in the `projects` array)
-
-To add a project, edit the array in `src/pages/demos.astro`:
-
-```ts
-{
-  title: 'Project Name',
-  tech: ['Python', 'Three.js', 'FastAPI'],
-  desc: 'A concise description of what the project does and why it was built.',
-  link: 'https://github.com/jevonlipsey/your-repo',
-}
-```
-
-If you build interactive 3D WebGL / Three.js canvases, place the React component in `src/components/` and import it into `src/pages/demos.astro` with `client:visible`.
-
----
-
-### 4. Hosting & Updating PDFs (CV / Resume / Papers)
-
-Static files live in `public/`. Any file in `public/` is served directly at the root:
-
-- Replace `public/cv.pdf` to update the site-wide `/cv.pdf` link.
-- Replace `public/lipsey-resume.pdf` to update the resume link.
-- To host full paper PDFs locally, place them in `public/papers/` (e.g. `public/papers/hri27.pdf` &rarr; accessible at `/papers/hri27.pdf`).
-
----
-
-## ⚡ Development & Deployment
-
-### Local Development
+## commands
 
 ```bash
-# install dependencies
-npm install
-
-# start dev server
-npm run dev
-
-# check build cleanly
-npm run check
-npm run build
-npm run test:motion
+npm install              # deps
+npm run dev              # dev server on 4321
+npm run check            # astro + ts diagnostics
+npm run build            # static build to dist/ (auto-converts images first)
+npm run preview          # serve the built site
+npm run test:motion      # headless motion unit tests
+npm run optimize:images  # convert public/ pngs+jpegs to webp (runs with build)
+npm run optimize:model   # glb -> web glb (meshopt + webp textures)
 ```
 
-### Deploying to Cloudflare Pages (Custom Domain `jevonlipsey.com`)
+## robot model pipeline
 
-1. **Push this repo to GitHub** (`git add . && git commit -m "site scaffold" && git push`).
-2. Log into the **Cloudflare Dashboard** &rarr; **Workers & Pages** &rarr; **Create application** &rarr; **Pages** &rarr; **Connect to Git**.
-3. Select your repository.
-4. Set Build Settings:
-   - **Framework preset:** `Astro`
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-   - **Node.js version:** `22` (set env var `NODE_VERSION = 22.12.0` if needed)
-5. Click **Save and Deploy**.
-6. Under **Custom domains**, add `jevonlipsey.com` (Cloudflare will automatically manage DNS, SSL, and edge CDN routing).
+the site loads `public/models/jev_cyborg.web.glb`(3mb). the blender source and original export live in `assets-src/`. after editing in blender, run `npm run optimize:model` to regenerate the web glb. the asset pipeline is one-way: keep assets-src committed and never point the loader back at the raw glb.
 
----
+## og image
 
-## 🏛️ Design Rules
+`public/og.png` is hand-finished (editable source: `assets-src/og.afdesign`). do NOT run `scripts/optimize-images.mjs` or `npm run og:generate` — both overwrite it.
 
-- **Print and hardware:** Ink-black (`#000000`) or bone paper (`#eae7e1`), Geist typography, drafting-tape tags, and a mechanical theme switch. Themes persist in local storage.
-- **Layout:** A split desktop hero and stacked mobile sculpture above the bio. Reading pages stay at 800px; the homepage uses a wider editorial grid.
-- **Zero Scroll Hijacking:** 100% native scrolling.
-- **Motion:** Frame-independent gaze, separate drag/showcase rotation, and a 0.0005 resting threshold. Hidden and offscreen scenes pause. Reduced motion disables idle animation and lets rendering sleep at rest.
-- **Texture:** Procedural ceramic halftone and model-local neck fade. The viewport grain is 4% overlay, preserving black backgrounds.
-- **Fast:** WebGL only loads on the homepage. Reading pages use a small theme script and citation islands where needed.
+## deploy (cloudflare pages)
 
-### Robot asset pipeline
+build command `npm run build`, output directory `dist`, node 22. the custom domain `jevonlipsey.com` is wired through the cloudflare dashboard. `public/_headers` sets cache-control (immutable for hashed astro assets), `robots.txt` points at `sitemap-index.xml` from the sitemap integration.
 
-The source export is `public/models/jev_cyborg.glb`. The site loads the optimized `public/models/jev_cyborg.web.glb` (2.44 MB, down from 15.6 MB). After exporting from Blender, run:
+## notes
 
-```bash
-npm run optimize:model
-```
-
-This generates 2048px WebP textures and Meshopt-compressed geometry. It checks that animation names and target channels match the original export. All 24 clips play together. Keep the original GLB and Blender files as the editing sources.
-
-### Browser verification
-
-The browser test requires Python Playwright and its Chromium installation. Start `npm run preview -- --port 4322` after building, then run:
-
-```bash
-python3 scripts/verify-portfolio.py --output /absolute/path/to/existing/screenshot-directory
-```
-
-It checks shader compilation, theme persistence, keyboard operation, showcase completion/interruption, mobile native scrolling, responsive overflow, offscreen pausing, and reduced-motion idling. Screenshots cover both themes and widths from 320px to 1440px.
+- reading pages are zero-js; only islands hydrate (`client:load` for the scene, `client:visible` for interactive widgets).
