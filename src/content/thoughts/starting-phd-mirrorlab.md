@@ -1,23 +1,23 @@
 ---
-title: 'Beginning the Ph.D. at MIRRORLab: Human-Robot Interaction and System Agency'
-date: 2026-09-13
-summary: 'Reflections on transitioning into social robotics, formulating community-grounded research questions, and the physical reality of embodied agents.'
-tags: ['hri', 'robotics', 'mirrorlab', 'phd']
+title: "beginning the ph.d at mirrorlab."
+date: 2026-09-22
+summary: "reflections on the lab for the next 5 yeeears."
+tags: ["hri", "robotics", "mirrorlab", "phd"]
 draft: false
 ---
 
-Starting graduate research at Colorado School of Mines under Dr. Tom Williams in the MIRRORLab. 
+I recently started my Ph.D. at Mines.
 
-Human-Robot Interaction sits at the nexus of embodied physical systems, algorithmic fairness, and everyday human vulnerability. Rather than treating social robots as unilateral agents dropped into sterile environments, our work examines the community dynamics, moral obligations, and interactive cues that shape actual human-machine co-presence.
+Moving into Human-Robot Interaction marks a shift in how I think about computation. Most of my undergraduate work focused on discrete systems where the domain was well-bounded. Robotics breaks that isolation. It’s a physical object sitting in the middle of a room, staring at you, taking up space, making you believe it feels, and completely ups the vibes of whoever's in the room.
 
-### The Shift from Symbolic Logic to Embodied Presence
+![pepper](/public/thoughts/pepper1.jpeg)
 
-In my undergraduate research at Lehigh and Colorado College, much of my work focused on the mathematical and computational substrate: optimizing backward-chaining Horn logic reasoners with dense embeddings and simulating millions of Markov chain steps on redistricting dual graphs.
+### what I’m digging into
 
-Those foundations remain central. But robotics introduces a physical constraint: an algorithm does not merely output a probability score; it occupies space, gestures, makes sound, and alters the social physics of a room.
+A few things I want to figure out over the next few years:
 
-### Designing for Vulnerability and Dignity
+**how much does the body matter?** Does putting an AI into a physical robot help people feel heard or less judged during sensitive talks? is there a gap for potential between digital and human agents?
 
-When robots are introduced into public or contested spaces—such as working with unhoused communities—the standard Silicon Valley assumptions of convenience and efficiency collapse. Questions of surveillance, municipal power, and mutual trust become foreground constraints.
+**Who writes the rules?** Letting the people who actually use the space set the robot’s boundaries, instead of engineers hardcoding whatever they assume is polite. Examine power structures, dynamics, and engage in participatory design to avert these norms.
 
-My goal over the next five years is to develop computational and behavioral architectures that allow robots to act in solidarity with marginalized groups rather than as enforcement extensions of existing power structures.
+**Knowing when to walk away:** Figure out where a machine can genuinely help people find resources, and be faithfully honest about where tech needs to avoid overreaching and leave human problems for human beings.
