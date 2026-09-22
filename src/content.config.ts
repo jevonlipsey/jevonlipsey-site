@@ -7,6 +7,7 @@ const research = defineCollection({
   schema: z.object({
     title: z.string(),
     venue: z.string(),
+    acronyms: z.array(z.string()).default([]),
     year: z.number(),
     status: z.enum(['published', 'in-review', 'preprint']),
     authors: z.array(z.string()),
@@ -14,6 +15,18 @@ const research = defineCollection({
     pdf: z.string().optional(),
     code: z.string().optional(),
     bibtex: z.string().optional(),
+    featured: z.boolean().default(false),
+  }),
+});
+
+const projects = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/projects' }),
+  schema: z.object({
+    title: z.string(),
+    desc: z.string(),
+    link: z.string(),
+    tech: z.array(z.string()).default([]),
+    metric: z.string().optional(),
     featured: z.boolean().default(false),
   }),
 });
@@ -31,5 +44,6 @@ const thoughts = defineCollection({
 
 export const collections = {
   research,
+  projects,
   thoughts,
 };

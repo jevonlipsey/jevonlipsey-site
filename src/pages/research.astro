@@ -16,7 +16,9 @@ const sortedPubs = (await getCollection('research')).sort((a, b) => b.data.year 
         <article class="pub-card space-y-4 border-t border-border pt-7">
           <div class="font-mono text-xs flex flex-wrap gap-x-3 gap-y-1 items-center">
             <span class="pub-year text-neutral-400">{pub.data.year}</span>
-            <span class="venue-badge text-neutral-400">{pub.data.venue}</span>
+            {(pub.data.acronyms.length ? pub.data.acronyms : [pub.data.venue]).map((badge, i) => (
+              <span key={i} class="venue-badge text-neutral-400" title={pub.data.venue}>{badge}</span>
+            ))}
             {pub.data.status === 'in-review' && <span class="status-badge text-amber-400/90">[under review]</span>}
           </div>
           <h2 class="text-xl sm:text-2xl font-medium tracking-tight">
@@ -24,7 +26,7 @@ const sortedPubs = (await getCollection('research')).sort((a, b) => b.data.year 
           </h2>
           <p class="text-sm text-muted-foreground leading-relaxed">
             {pub.data.authors.map((author, index) => (
-              <span>{author === 'Jevon Lipsey' ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < pub.data.authors.length - 1 && ', '}</span>
+              <span>{/lipsey/i.test(author) ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < pub.data.authors.length - 1 && ', '}</span>
             ))}
           </p>
           <p class="text-sm text-muted-foreground leading-relaxed">{pub.data.abstract}</p>

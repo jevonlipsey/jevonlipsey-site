@@ -556,6 +556,13 @@ export default function ImmersiveScene() {
       previousTime = performance.now();
       maxDisplacement = 0;
       spinVelocity = 0;
+      // keep the gaze on the mouse instead of snapping to center when the
+      // drag starts: the head already sits where the cursor is, so seed the
+      // smoothing there and let the drag take over from that heading
+      cursorX = (event.clientX / window.innerWidth) * 2 - 1;
+      cursorY = 1 - (event.clientY / window.innerHeight) * 2;
+      smoothCursorX = cursorX;
+      smoothCursorY = cursorY;
     }
 
     function onPointerMove(event: PointerEvent) {

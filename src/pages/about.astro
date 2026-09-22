@@ -1,19 +1,29 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { SITE } from '../site.config';
 ---
 
 <Layout title="About | Jevon Lipsey" description="About Jevon Lipsey, Ph.D. student at Colorado School of Mines MIRRORLab.">
-  <div class="space-y-8">
-    <div class="space-y-4">
-      <h1 class="font-semibold">About</h1>
-      <p class="text-muted-foreground">Background, research context, and curriculum vitae.</p>
+  <div class="space-y-10 max-w-4xl">
+    <div class="space-y-2">
+      <h1 class="text-3xl font-semibold tracking-tight">About</h1>
+      <p class="text-sm text-neutral-500 dark:text-neutral-400 font-mono">Background, research context, and curriculum vitae.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-[1fr_minmax(200px,280px)] gap-10 items-start">
-      <div class="reading-body order-2 md:order-1">
-        <p>I am a Computer Science Ph.D. student at Colorado School of Mines in the <strong>MIRROЯLab</strong>, advised by <strong>Dr. Tom Williams</strong>.</p>
-        <p>My research centers on <strong>Human-Robot Interaction (HRI)</strong> to design equitable, community-grounded social robotic systems. I study how robots interface with marginalized communities, specifically unhoused populations, and how interactive protocols can respect privacy, preserve human dignity, and avoid paternalistic defaults.</p>
-        <p>Prior to Mines, I completed my B.A. in Computer Science at <strong>Colorado College</strong> (GPA 3.92, Steven Janke Award for Outstanding Achievement in CS, Euclid Scholar). My undergraduate research spanned neurosymbolic AI (published at AAAI-25 and PMLR 2025), computational redistricting using MCMC Markov chains, and cultural humanities research for Oxford University Press examining Midwestern Hip Hop subcultures and intersectional feminist frameworks.</p>
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_minmax(220px,280px)] gap-12 items-start">
+      <div class="reading-body order-2 md:order-1 space-y-6 text-base leading-relaxed text-neutral-800 dark:text-neutral-200">
+        <p>
+          I am a Computer Science Ph.D. student at the <strong>Colorado School of Mines</strong> in the <strong>MIRROЯLab</strong>, advised by <strong>Dr. Tom Williams</strong>. My research focuses on <strong>Human-Robot Interaction (HRI)</strong> in shared civic spaces like public libraries and classrooms. I study how physical embodiment shapes perceived judgment and engagement during sensitive conversations—testing where interactive agents can meaningfully expand access, and where human relationships should never be replaced.
+        </p>
+        <p>
+          Prior to Mines, I earned my B.A. in Computer Science from <strong>Colorado College</strong> (GPA 3.92, Steven Janke, Euclid Scholar awards recognizing academic rigor in CS). My undergraduate research spanned algorithmic fairness and computational redistricting, neurosymbolic reasoning (published at AAAI-25 and PMLR 2025), and cultural humanities work on Midwestern Hip Hop with Oxford University Press.
+        </p>
+        <p>
+          Alongside academic research, I work in creative computing and full-stack engineering. My work includes building <strong>Featherweight</strong>, an automated eBird observation ranker (Vue.js/FastAPI), developing <strong>Pocket8</strong>, an open-source iOS PICO-8 engine wrapper, and experimenting with real-time web shaders and 3D graphics.
+        </p>
+        <p class="text-neutral-600 dark:text-neutral-400 text-sm">
+          Outside the lab, I spend time tinkering with my homelab server, handheld emulation, videography, and other creative coding projects. Away from the desk, I love city biking and exploring the city.
+        </p>
       </div>
 
       <figure class="group relative w-full overflow-hidden rounded-xl border border-border bg-muted/20 order-1 md:order-2 isolate">
@@ -26,9 +36,10 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <div class="border-t border-border pt-6 flex flex-wrap gap-6 text-xs font-mono">
-      <a href="/cv.pdf" target="_blank" rel="noreferrer" class="ink-bleed-link">Curriculum Vitae (PDF) ↗</a>
-      <a href="/lipsey-resume.pdf" target="_blank" rel="noreferrer" class="ink-bleed-link">Resume (PDF) ↗</a>
-      <a href="mailto:jevon_lipsey@mines.edu" class="ink-bleed-link">jevon_lipsey@mines.edu</a>
+      <a href={SITE.links.cv} target="_blank" rel="noreferrer" class="ink-bleed-link">curriculum vitae (pdf) ↗</a>
+      <a href={SITE.links.resume} target="_blank" rel="noreferrer" class="ink-bleed-link">resume (pdf) ↗</a>
+      <a href={`mailto:${SITE.emails.academic}`} class="ink-bleed-link">academic &middot; {SITE.emails.academic} ↗</a>
+      <a href={`mailto:${SITE.emails.personal}`} class="ink-bleed-link">personal &middot; {SITE.emails.personal} ↗</a>
     </div>
   </div>
 </Layout>

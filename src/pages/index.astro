@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ImmersiveScene from '../components/ImmersiveScene';
+import { SITE } from '../site.config';
 import { getCollection } from 'astro:content';
 import BibtexButton from '../components/BibtexButton';
 
@@ -9,48 +10,21 @@ const recentThoughts = (await getCollection('thoughts'))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
   .slice(0, 3);
-const projects = [
-  {
-    title: 'pocket8',
-    metric: '6,000+ downloads',
-    tech: ['webassembly', 'swift', 'vue.js'],
-    desc: 'Officially licensed PICO-8 mobile companion built with Lexaloffle Games. Bridges WebAssembly memory snapshots with native iOS file systems.',
-    link: 'https://github.com/jevonlipsey',
-  },
-  {
-    title: 'ocean sweep',
-    metric: 'computer vision + physical control',
-    tech: ['UbiComp', 'three.js', 'micro:bit'],
-    desc: 'An ocean cleanup game steered with hand gestures and a physical Micro:bit controller. Webcam vision meets accelerometer input over Web Serial.',
-    link: 'https://github.com/jevonlipsey',
-  },
-  {
-    title: 'total community preservation',
-    metric: '20m+ mcmc steps',
-    tech: ['python', 'geopandas', 'gerrychain'],
-    desc: 'Measuring community-of-interest fractures across Colorado legislative boundaries with a dual-graph pipeline and Markov chain redistricting simulations.',
-    link: 'https://github.com/jevonlipsey',
-  },
-  {
-    title: 'featherweight',
-    metric: 'ebird observation engine',
-    tech: ['fastapi', 'python', 'sqlite'],
-    desc: 'Historical observation data turned into likelihood estimates that help birders decide where to look next.',
-    link: 'https://github.com/jevonlipsey',
-  },
-];
+const featuredProjects = (await getCollection('projects'))
+  .filter((project) => project.data.featured)
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
 ---
 
-<Layout title="Jevon Lipsey | Human-Robot Interaction">
+<Layout title="jevon lipsey.">
   <section
     class="hero-section relative min-h-[100svh] w-full flex flex-col justify-center px-6 md:px-12 overflow-hidden"
     aria-labelledby="hero-title"
     style="isolation: isolate"
   >
-    <!-- LAYER 1: 3D canvas, absolute backdrop (rendered by the island) -->
+    <!-- LAYER 1: 3D canvas, absolute backdrop --->
     <ImmersiveScene client:load />
 
-    <!-- LAYER 2: pure exclusion cutout, DIRECT SIBLING of the canvas, no wrappers -->
+    <!-- LAYER 2: exclusion cutout -->
     <h1
       id="hero-title"
       class="relative z-20 hero-title text-white font-sans font-bold tracking-[-0.04em] leading-[0.88] select-none pointer-events-none"
@@ -60,45 +34,51 @@ const projects = [
 
     <!-- LAYER 3: bio + links, interactive, below the title -->
     <div class="hero-copy relative z-30 mt-4 max-w-md pointer-events-auto bg-transparent">
-      <p class="hero-bio"><strong>Human-robot interaction researcher.</strong><br />
-        Ph.D. student at Colorado School of Mines, advised by Dr. Tom Williams.</p>
+      <p class="hero-bio"><strong>Human-robot interaction. Helluva engineer.</strong><br />
+        Ph.D. researcher at Colorado School of Mines, advised under Dr. Tom Williams in the MIRROЯLab.</p>
       <div class="hero-links" aria-label="Profile links">
-        <a class="ink-bleed-link" href="/cv.pdf" target="_blank" rel="noreferrer">cv ↗</a>
-        <a class="ink-bleed-link" href="https://github.com/jevonlipsey" target="_blank" rel="noreferrer">github ↗</a>
-        <a class="ink-bleed-link" href="https://scholar.google.com" target="_blank" rel="noreferrer">scholar ↗</a>
-        <a class="ink-bleed-link" href="mailto:jevon_lipsey@mines.edu">email ↗</a>
+        <a class="ink-bleed-link" href={SITE.links.cv} target="_blank" rel="noreferrer">cv ↗</a>
+        <a class="ink-bleed-link" href={SITE.links.github} target="_blank" rel="noreferrer">github ↗</a>
+        <a class="ink-bleed-link" href={SITE.links.scholar} target="_blank" rel="noreferrer">scholar ↗</a>
+        <a class="ink-bleed-link" href={`mailto:${SITE.emails.personal}`}>email ↗</a>
       </div>
     </div>
   </section>
-
-  <div class="research-intro relative group hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-2xl p-6 -mx-6">
+  <!-- about section -->
+  <div class="research-intro relative group hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-2xl p-6 -mx-6 reveal" style="--i: 0">
     <a href="/about" class="absolute inset-0 z-10" aria-label="Read more about Jevon Lipsey"></a>
     <span class="about-label flex justify-between items-center w-full">
       about
       <span class="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300">↗</span>
     </span>
-    <p>I study how physical agents navigate human and spatial boundaries, through community-grounded social robotics, embodied agency, and algorithmic fairness.</p>
+    <p>I study how people interact with conversational robots in civic settings like public libraries and classrooms. My work explores how physical embodiment shapes perceived judgment and engagement, investigating where robots meaningfully expand accessibility and where human relationships should never be replaced.</p>
   </div>
 
   <section class="home-section" aria-labelledby="research-title">
     <div class="section-heading">
-      <h2 id="research-title">selected research</h2>
-      <a class="ink-bleed-link" href="/research">all publications ↗</a>
+      <h2 id="research-title">
+        <a class="section-heading-link" href="/research">
+          <span class="heading-label">selected research</span>
+          <span class="heading-arrow" aria-hidden="true">↗</span>
+        </a>
+      </h2>
     </div>
     <div class="publication-list">
-      {sortedResearch.map((paper) => (
-        <article class="publication pub-card relative group">
-          <!-- dedicated stretched-link hit area for the entire card -->
+      {sortedResearch.map((paper, index) => (
+        <article class="publication pub-card relative group reveal" style={`--i: ${index}`}>
+          <!-- hit area for the entire card -->
           <a href={`/research/${paper.id}`} class="absolute inset-0 z-10" aria-label={`Read ${paper.data.title}`}></a>
           <div class="publication-meta flex flex-wrap gap-x-3 gap-y-1 items-center">
             <span class="pub-year font-mono text-xs text-neutral-400">{paper.data.year}</span>
-            <span class="venue-badge font-mono text-xs text-neutral-400" title={paper.data.venue}>{paper.data.venue.match(/\b(HRI|AAAI|PMLR)\b/)?.[0] ?? paper.data.venue}</span>
+            {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge, i) => (
+              <span key={i} class="venue-badge font-mono text-xs text-neutral-400" title={paper.data.venue}>{badge}</span>
+            ))}
             {paper.data.status === 'in-review' && <span class="status-badge font-mono text-xs text-amber-400/90">[under review]</span>}
           </div>
           <div>
             <h3><a class="ink-bleed-link" href={`/research/${paper.id}`}>{paper.data.title}</a></h3>
             <p class="publication-authors">{paper.data.authors.map((author, index) => (
-              <span>{author === 'Jevon Lipsey' ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < paper.data.authors.length - 1 && ', '}</span>
+              <span>{/lipsey/i.test(author) ? <strong class="font-medium text-foreground">{author}</strong> : author}{index < paper.data.authors.length - 1 && ', '}</span>
             ))}</p>
             <p class="publication-abstract">{paper.data.abstract}</p>
             <div class="publication-actions relative z-20">
@@ -115,32 +95,40 @@ const projects = [
 
   <section class="home-section" aria-labelledby="systems-title">
     <div class="section-heading">
-      <h2 id="systems-title">software &amp; systems</h2>
-      <a class="ink-bleed-link" href="/projects">projects ↗</a>
+      <h2 id="systems-title">
+        <a class="section-heading-link" href="/projects">
+          <span class="heading-label">software &amp; systems</span>
+          <span class="heading-arrow" aria-hidden="true">↗</span>
+        </a>
+      </h2>
     </div>
     <div class="project-grid">
-      {projects.map((project) => (
-        <article class="project-card relative">
+      {featuredProjects.map((project, index) => (
+        <article class="project-card relative reveal" style={`--i: ${index}`}>
           <!-- dedicated stretched-link hit area for the entire card -->
-          <a href={project.link} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${project.title}`}></a>
-          <span class="project-metric">{project.metric}</span>
-          <h3><a class="ink-bleed-link" href={project.link} target="_blank" rel="noreferrer">{project.title} ↗</a></h3>
-          <p>{project.desc}</p>
-          <div class="project-tags">{project.tech.map((tag) => <span class="project-tag">{tag}</span>)}</div>
+          <a href={project.data.link} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${project.data.title}`}></a>
+          {project.data.metric && <span class="project-metric">{project.data.metric}</span>}
+          <h3><a class="ink-bleed-link" href={project.data.link} target="_blank" rel="noreferrer">{project.data.title} ↗</a></h3>
+          <p>{project.data.desc}</p>
+          <div class="project-tags">{project.data.tech.map((tag) => <span class="project-tag">{tag}</span>)}</div>
         </article>
       ))}
     </div>
   </section>
 
   {recentThoughts.length > 0 && (
-    <section class="home-section" aria-labelledby="writing-title">
+    <section class="home-section" aria-labelledby="thoughts-title">
       <div class="section-heading">
-        <h2 id="writing-title">writing</h2>
-        <a class="ink-bleed-link" href="/thoughts">all writing ↗</a>
+        <h2 id="thoughts-title">
+          <a class="section-heading-link" href="/thoughts">
+            <span class="heading-label">thoughts</span>
+            <span class="heading-arrow" aria-hidden="true">↗</span>
+          </a>
+        </h2>
       </div>
-      <div class="writing-list">
-        {recentThoughts.map((post) => (
-          <article class="writing-entry">
+      <div class="thoughts-list">
+        {recentThoughts.map((post, index) => (
+          <article class="thoughts-entry reveal" style={`--i: ${index}`}>
             <time datetime={post.data.date.toISOString()}>{post.data.date.toISOString().slice(0, 10)}</time>
             <div><a class="ink-bleed-link" href={`/thoughts/${post.id}`}>{post.data.title}</a></div>
           </article>
@@ -149,3 +137,25 @@ const projects = [
     </section>
   )}
 </Layout>
+
+<script>
+  document.documentElement.classList.add('reveal-active');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const revealEls = Array.from(document.querySelectorAll('.reveal'));
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    revealEls.forEach((el) => el.classList.add('revealed'));
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            io.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
+    );
+    revealEls.forEach((el) => io.observe(el));
+  }
+</script>

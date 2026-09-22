@@ -1,17 +1,62 @@
 ---
+import { getCollection } from 'astro:content';
+import SiteSearch from '../components/SiteSearch';
+import { SITE } from '../site.config';
+import type { SearchEntry } from '../lib/search';
+
 const currentPath = Astro.url.pathname;
 const navLinks = [
   { label: 'about', href: '/about' },
   { label: 'research', href: '/research' },
   { label: 'projects', href: '/projects' },
-  { label: 'writing', href: '/thoughts' },
+  { label: 'thoughts', href: '/thoughts' },
 ];
+
+const researchEntries: SearchEntry[] = (await getCollection('research')).map((p) => ({
+  type: 'research',
+  title: p.data.title,
+  url: `/research/${p.id}`,
+  meta: `${String(p.data.year)} · ${p.data.venue}`,
+  blurb: p.data.abstract,
+  tags: [],
+}));
+
+const thoughtEntries: SearchEntry[] = (await getCollection('thoughts'))
+  .filter((p) => !p.data.draft)
+  .map((p) => ({
+    type: 'thought',
+    title: p.data.title,
+    url: `/thoughts/${p.id}`,
+    meta: p.data.date.toISOString().slice(0, 10),
+    blurb: p.data.summary,
+    tags: p.data.tags,
+  }));
+
+const projectEntries: SearchEntry[] = (await getCollection('projects')).map((p) => ({
+  type: 'project',
+  title: p.data.title,
+  url: p.data.link,
+  external: true,
+  meta: p.data.tech.slice(0, 3).join(' · '),
+  blurb: p.data.desc,
+  tags: p.data.tech,
+}));
+
+const pageEntries: SearchEntry[] = [
+  { type: 'page', title: 'about', url: '/about', meta: 'page', blurb: 'background, research interests, and experience', tags: [] },
+  { type: 'page', title: 'research', url: '/research', meta: 'page', blurb: 'all publications and manuscripts', tags: [] },
+  { type: 'page', title: 'projects', url: '/projects', meta: 'page', blurb: 'software systems and experiments', tags: [] },
+  { type: 'page', title: 'thoughts', url: '/thoughts', meta: 'page', blurb: 'essays, notes, and field notes', tags: [] },
+  { type: 'page', title: 'resumé', url: SITE.links.cv, meta: 'pdf', blurb: 'curriculum vitae', tags: [], external: true },
+];
+
+const searchEntries = [...researchEntries, ...thoughtEntries, ...projectEntries, ...pageEntries];
 ---
 
 <header class="site-header">
   <div class="header-inner">
-    <a href="/" class="avatar-logo" aria-label="Jevon Lipsey home">
-      <img src="/avatar.svg" alt="Jevon Lipsey" width="40" height="40" class="pixel-avatar" />
+    <a href="/" class="avatar-logo" aria-label={`${SITE.name} home`}>
+      <img src="/avatar.svg" alt={SITE.name} width="40" height="40" class="pixel-avatar" />
     </a>
     <nav aria-label="Main navigation">
       {navLinks.map((item) => (
@@ -20,6 +65,7 @@ const navLinks = [
         </a>
       ))}
     </nav>
+    <SiteSearch client:load entries={searchEntries} />
     <button id='theme-toggle' class='flex items-center justify-center w-9 h-9 rounded-full border transition-colors duration-200 bg-[#e2ded7] border-[#d4ceca] text-[#111111] dark:bg-[#18181b] dark:border-[#27272a] dark:text-[#fafafa]' type='button' aria-label='Toggle theme'>
       <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>

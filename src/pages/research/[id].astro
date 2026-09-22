@@ -24,7 +24,9 @@ const { Content } = await render(paper);
 
       <div class="font-mono text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 items-center">
         <span class="pub-year text-neutral-400">{paper.data.year}</span>
-        <span class="venue-badge text-neutral-400">{paper.data.venue}</span>
+        {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge, i) => (
+          <span key={i} class="venue-badge text-neutral-400" title={paper.data.venue}>{badge}</span>
+        ))}
         {paper.data.status === 'in-review' && (
           <span class="status-badge text-amber-400/90">[under review]</span>
         )}
@@ -37,7 +39,7 @@ const { Content } = await render(paper);
       <p class="text-sm text-muted-foreground leading-relaxed">
         {paper.data.authors.map((author, idx) => (
           <span>
-            {author === 'Jevon Lipsey' ? (
+            {/lipsey/i.test(author) ? (
               <strong class="font-semibold text-foreground">{author}</strong>
             ) : (
               <span>{author}</span>

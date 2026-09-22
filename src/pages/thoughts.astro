@@ -1,52 +1,32 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import ThoughtsArchive from '../components/ThoughtsArchive';
 import { getCollection } from 'astro:content';
 
-const posts = await getCollection('thoughts');
-const sortedPosts = posts
+const posts = (await getCollection('thoughts'))
   .filter((p) => !p.data.draft)
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const thoughts = posts.map((p) => ({
+  id: p.id,
+  title: p.data.title,
+  date: p.data.date.toISOString().slice(0, 10),
+  summary: p.data.summary,
+  tags: p.data.tags,
+  url: `/thoughts/${p.id}`,
+}));
 ---
 
-<Layout title="Writing | Jevon Lipsey" description="Field notes on robotics, computing ethics, and software engineering.">
+<Layout title="Thoughts | Jevon Lipsey" description="Field notes on robotics, computing ethics, and software engineering.">
   <div class="space-y-10">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Writing</h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground mb-2">Thoughts</h1>
       <p class="text-base text-muted-foreground">
         Essays, notes, and observations on HRI, research methodology, and systems.
       </p>
     </div>
 
     <div class="space-y-8">
-      {sortedPosts.map((post) => (
-        <article class="space-y-2 border-b border-border/40 pb-6 last:border-0">
-          <div class="flex flex-wrap items-baseline justify-between gap-4">
-            <h2 class="text-xl font-medium text-foreground">
-              <a href={`/thoughts/${post.id}`} class="ink-bleed-link">
-                {post.data.title}
-              </a>
-            </h2>
-            <span class="font-mono text-xs text-muted-foreground whitespace-nowrap">
-              {post.data.date.toISOString().slice(0, 10)}
-            </span>
-          </div>
-
-          <p class="text-sm text-muted-foreground leading-relaxed">
-            {post.data.summary}
-          </p>
-
-          <div class="flex flex-wrap gap-5 items-center justify-between pt-3">
-            <div class="flex flex-wrap items-center gap-2">
-              {post.data.tags.map((tag) => (
-                <span class="project-tag">{tag}</span>
-              ))}
-            </div>
-            <a href={`/thoughts/${post.id}`} class="ink-bleed-link text-xs font-mono">
-              read note &rarr;
-            </a>
-          </div>
-        </article>
-      ))}
+      <ThoughtsArchive client:load posts={thoughts} />
     </div>
   </div>
 </Layout>

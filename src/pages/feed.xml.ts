@@ -8,7 +8,7 @@ export async function GET(context: APIContext) {
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
   return rss({
-    title: 'Jevon Lipsey — writing',
+    title: 'Jevon Lipsey — thoughts',
     description: 'Essays and notes on HRI, social robotics, and adjacent research.',
     site: context.site!,
     trailingSlash: false,
