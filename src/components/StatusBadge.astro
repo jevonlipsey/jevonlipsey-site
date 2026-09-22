@@ -1,0 +1,21 @@
+---
+// status dictionary so new states never touch templates again
+interface Props {
+  status: string;
+}
+
+const { status } = Astro.props;
+
+const labels: Record<string, string> = {
+  'in-review': 'under review',
+  accepted: 'accepted',
+  'camera-ready': 'camera ready',
+  workshop: 'workshop',
+  'best-paper': 'best paper',
+  preprint: 'preprint',
+};
+---
+
+{
+  labels[status] && <span class="status-badge">[{labels[status]}]</span>
+}

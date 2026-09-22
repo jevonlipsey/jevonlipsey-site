@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import ProjectLinks from '../components/ProjectLinks.astro';
 import { getCollection } from 'astro:content';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.title.localeCompare(b.data.title));
@@ -16,23 +17,19 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.title.l
 
     <div class="space-y-8">
       <div class="space-y-6">
-        {projects.map((item) => (
+        {projects.map((item) => {
+          const { github, demo, appstore, caseStudy } = item.data.links;
+          const primary = github ?? demo ?? appstore ?? caseStudy;
+          const primaryInternal = primary === caseStudy;
+          return (
           <article class="project-card relative">
-            <!-- dedicated stretched-link hit area for the entire card -->
-            <a href={item.data.link} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${item.data.title}`}></a>
-            <div class="flex flex-wrap items-baseline justify-between gap-4 mb-1">
-              <h3 class="text-foreground">
-                {item.data.title}
-              </h3>
-              <a
-                href={item.data.link}
-                target="_blank"
-                rel="noreferrer"
-                class="ink-bleed-link font-mono text-xs shrink-0"
-              >
-                source &rarr;
-              </a>
-            </div>
+            {primary && (primaryInternal ? (
+              <a href={primary} class="card-hit-area" aria-label={`Open ${item.data.title}`}></a>
+            ) : (
+              <a href={primary} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${item.data.title}`}></a>
+            ))}
+            <h3>{item.data.title}</h3>
+            <ProjectLinks links={item.data.links} />
             <p class="text-sm text-muted-foreground leading-relaxed mb-3">
               {item.data.desc}
             </p>
@@ -42,7 +39,8 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.title.l
               ))}
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   </div>

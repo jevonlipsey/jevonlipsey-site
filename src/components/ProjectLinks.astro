@@ -1,0 +1,25 @@
+---
+// renders each available project link slot as a bracketed mono action,
+// opening a new tab for external slots and in-place for case-study routes
+interface Props {
+  links: { github?: string; demo?: string; appstore?: string; caseStudy?: string };
+}
+
+const { links } = Astro.props;
+
+const actions: Array<{ label: string; href: string; internal: boolean }> = [];
+if (links.github) actions.push({ label: 'source', href: links.github, internal: false });
+if (links.demo) actions.push({ label: 'demo', href: links.demo, internal: false });
+if (links.appstore) actions.push({ label: 'app store', href: links.appstore, internal: false });
+if (links.caseStudy) actions.push({ label: 'case study', href: links.caseStudy, internal: true });
+---
+
+<div class="publication-actions">
+  {actions.map((action) =>
+    action.internal ? (
+      <a class="ink-bleed-link" href={action.href}>[{action.label}]</a>
+    ) : (
+      <a class="ink-bleed-link" href={action.href} target="_blank" rel="noreferrer">[{action.label}]</a>
+    ),
+  )}
+</div>

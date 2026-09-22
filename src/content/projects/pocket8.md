@@ -2,7 +2,8 @@
 title: "Pocket8"
 tech: ["webassembly", "capacitor", "vue.js", "ios"]
 desc: "Native iOS runtime and companion app for the PICO-8 fantasy console. Available on the App Store."
-link: "https://github.com/jevonlipsey/pico-ios"
+links:
+  github: "https://github.com/jevonlipsey/pico-ios"
 featured: true
 ---
 

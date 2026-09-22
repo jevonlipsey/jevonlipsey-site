@@ -28,7 +28,7 @@ const { Content } = await render(post);
         <span>&bull;</span>
         <div class="flex flex-wrap items-center gap-2">
           {post.data.tags.map((tag) => (
-            <span class="project-tag">{tag}</span>
+            <a class="project-tag" href={`/thoughts?tag=${encodeURIComponent(tag)}`}>{tag}</a>
           ))}
         </div>
       </div>

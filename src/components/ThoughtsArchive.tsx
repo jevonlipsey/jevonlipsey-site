@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface ThoughtItem {
   id: string;
@@ -19,6 +19,11 @@ export default function ThoughtsArchive({ posts }: Props) {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   const [order, setOrder] = useState<SortOrder>('newest');
+
+  useEffect(() => {
+    const preselect = new URLSearchParams(window.location.search).get('tag');
+    if (preselect) setTag(preselect);
+  }, []);
 
   const allTags = useMemo(() => {
     const counts = new Map<string, number>();

@@ -2,7 +2,8 @@
 title: "coi preservation project"
 tech: ["python", "gerrychain", "geopandas", "networkx"]
 desc: "Quantifying community-of-interest (COI) fractures across Colorado legislative districts using MCMC ReCom simulations to analyze how unweighted boundary preservation shifts partisan balance."
-link: "https://github.com/jevonlipsey/coi-preservation-project"
+links:
+  github: "https://github.com/jevonlipsey/coi-preservation-project"
 featured: true
 ---
 

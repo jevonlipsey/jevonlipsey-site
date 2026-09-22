@@ -652,7 +652,8 @@ button { cursor: pointer; }
   border-color: var(--foreground);
   background: color-mix(in srgb, var(--foreground) 12%, transparent);
 }
-button.project-tag:hover {
+button.project-tag:hover,
+a.project-tag:hover {
   color: var(--foreground);
   border-color: color-mix(in srgb, var(--foreground) 30%, transparent);
 }

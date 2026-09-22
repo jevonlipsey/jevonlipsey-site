@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import BibtexButton from '../../components/BibtexButton';
+import StatusBadge from '../../components/StatusBadge.astro';
 
 export async function getStaticPaths() {
   const papers = await getCollection('research');
@@ -24,12 +25,10 @@ const { Content } = await render(paper);
 
       <div class="font-mono text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 items-center">
         <span class="pub-year text-neutral-400">{paper.data.year}</span>
-        {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge, i) => (
-          <span key={i} class="venue-badge text-neutral-400" title={paper.data.venue}>{badge}</span>
+        {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge) => (
+          <span class="venue-badge text-neutral-400" title={paper.data.venue}>{badge}</span>
         ))}
-        {paper.data.status === 'in-review' && (
-          <span class="status-badge text-amber-400/90">[under review]</span>
-        )}
+        <StatusBadge status={paper.data.status} />
       </div>
 
       <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">

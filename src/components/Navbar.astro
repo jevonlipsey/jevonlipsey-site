@@ -32,15 +32,19 @@ const thoughtEntries: SearchEntry[] = (await getCollection('thoughts'))
     tags: p.data.tags,
   }));
 
-const projectEntries: SearchEntry[] = (await getCollection('projects')).map((p) => ({
-  type: 'project',
-  title: p.data.title,
-  url: p.data.link,
-  external: true,
-  meta: p.data.tech.slice(0, 3).join(' · '),
-  blurb: p.data.desc,
-  tags: p.data.tech,
-}));
+const projectEntries: SearchEntry[] = (await getCollection('projects')).map((p) => {
+  const { github, demo, appstore, caseStudy } = p.data.links;
+  const primary = github ?? demo ?? appstore ?? caseStudy;
+  return {
+    type: 'project',
+    title: p.data.title,
+    url: primary ?? '/projects',
+    external: primary !== caseStudy,
+    meta: p.data.tech.slice(0, 3).join(' · '),
+    blurb: p.data.desc,
+    tags: p.data.tech,
+  };
+});
 
 const pageEntries: SearchEntry[] = [
   { type: 'page', title: 'about', url: '/about', meta: 'page', blurb: 'background, research interests, and experience', tags: [] },

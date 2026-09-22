@@ -401,6 +401,7 @@ export default function ImmersiveScene() {
     loader.load(
       "/models/jev_cyborg.web.glb",
       (gltf) => {
+        try {
         if (disposed) {
           disposeModel(gltf.scene);
           return;
@@ -538,6 +539,10 @@ export default function ImmersiveScene() {
         }, 400);
         resize();
         wake();
+        } catch (err) {
+          console.error("Scene boot error:", err);
+          if (!disposed) setStatus("unavailable");
+        }
       },
       undefined,
       (error) => {

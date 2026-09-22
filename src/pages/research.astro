@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import BibtexButton from '../components/BibtexButton';
+import StatusBadge from '../components/StatusBadge.astro';
 const sortedPubs = (await getCollection('research')).sort((a, b) => b.data.year - a.data.year);
 ---
 
@@ -16,10 +17,10 @@ const sortedPubs = (await getCollection('research')).sort((a, b) => b.data.year 
         <article class="pub-card space-y-4 border-t border-border pt-7">
           <div class="font-mono text-xs flex flex-wrap gap-x-3 gap-y-1 items-center">
             <span class="pub-year text-neutral-400">{pub.data.year}</span>
-            {(pub.data.acronyms.length ? pub.data.acronyms : [pub.data.venue]).map((badge, i) => (
-              <span key={i} class="venue-badge text-neutral-400" title={pub.data.venue}>{badge}</span>
+            {(pub.data.acronyms.length ? pub.data.acronyms : [pub.data.venue]).map((badge) => (
+              <span class="venue-badge text-neutral-400" title={pub.data.venue}>{badge}</span>
             ))}
-            {pub.data.status === 'in-review' && <span class="status-badge text-amber-400/90">[under review]</span>}
+            <StatusBadge status={pub.data.status} />
           </div>
           <h2 class="text-xl sm:text-2xl font-medium tracking-tight">
             <a href={`/research/${pub.id}`} class="ink-bleed-link">{pub.data.title}</a>

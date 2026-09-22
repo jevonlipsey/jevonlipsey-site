@@ -1,0 +1,51 @@
+---
+// editorial figure for prose posts: size/aspect/align controls with a caption
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'full';
+  aspect?: 'auto' | 'square' | 'video' | 'portrait';
+  align?: 'center' | 'left' | 'right';
+}
+
+const { src, alt, caption, size = 'md', aspect = 'auto', align = 'center' } = Astro.props;
+
+// tolerate trochaic /public/ prefixes from notebooks and local references
+const normalizedSrc = src.replace(/^\/public/, '');
+
+const sizes: Record<string, string> = {
+  xs: 'max-w-xs',
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-xl',
+  full: 'w-full',
+};
+
+const aspects: Record<string, string> = {
+  auto: '',
+  square: 'aspect-square object-cover',
+  video: 'aspect-video object-cover',
+  portrait: 'aspect-[3/4] object-cover',
+};
+
+const alignments: Record<string, string> = {
+  center: 'mx-auto',
+  left: 'mr-auto',
+  right: 'ml-auto',
+};
+---
+
+<figure class="my-8">
+  <img
+    class={`rounded-xl border border-border shadow-xs ${sizes[size]} ${aspects[aspect]} ${alignments[align]}`}
+    src={normalizedSrc}
+    alt={alt}
+    loading="lazy"
+  />
+  {caption && (
+    <figcaption class="text-center font-mono text-xs text-muted-foreground mt-2">
+      {caption}
+    </figcaption>
+  )}
+</figure>

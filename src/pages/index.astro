@@ -4,6 +4,8 @@ import ImmersiveScene from '../components/ImmersiveScene';
 import { SITE } from '../site.config';
 import { getCollection } from 'astro:content';
 import BibtexButton from '../components/BibtexButton';
+import StatusBadge from '../components/StatusBadge.astro';
+import ProjectLinks from '../components/ProjectLinks.astro';
 
 const sortedResearch = (await getCollection('research')).sort((a, b) => b.data.year - a.data.year);
 const recentThoughts = (await getCollection('thoughts'))
@@ -70,10 +72,10 @@ const featuredProjects = (await getCollection('projects'))
           <a href={`/research/${paper.id}`} class="absolute inset-0 z-10" aria-label={`Read ${paper.data.title}`}></a>
           <div class="publication-meta flex flex-wrap gap-x-3 gap-y-1 items-center">
             <span class="pub-year font-mono text-xs text-neutral-400">{paper.data.year}</span>
-            {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge, i) => (
+            {(paper.data.acronyms.length ? paper.data.acronyms : [paper.data.venue]).map((badge) => (
               <span class="venue-badge font-mono text-xs text-neutral-400" title={paper.data.venue}>{badge}</span>
             ))}
-            {paper.data.status === 'in-review' && <span class="status-badge font-mono text-xs text-amber-400/90">[under review]</span>}
+            <StatusBadge status={paper.data.status} />
           </div>
           <div>
             <h3><a class="ink-bleed-link" href={`/research/${paper.id}`}>{paper.data.title}</a></h3>
@@ -103,16 +105,22 @@ const featuredProjects = (await getCollection('projects'))
       </h2>
     </div>
     <div class="project-grid">
-      {featuredProjects.map((project, index) => (
-        <article class="project-card relative reveal" style={`--i: ${index}`}>
-          <!-- dedicated stretched-link hit area for the entire card -->
-          <a href={project.data.link} target="_blank" rel="noreferrer" class="card-hit-area" aria-label={`Open ${project.data.title}`}></a>
-          {project.data.metric && <span class="project-metric">{project.data.metric}</span>}
-          <h3><a class="ink-bleed-link" href={project.data.link} target="_blank" rel="noreferrer">{project.data.title} ↗</a></h3>
-          <p>{project.data.desc}</p>
-          <div class="project-tags">{project.data.tech.map((tag) => <span class="project-tag">{tag}</span>)}</div>
-        </article>
-      ))}
+      {featuredProjects.map((project, index) => {
+          const { github, demo, appstore, caseStudy } = project.data.links;
+          const primary = github ?? demo ?? appstore ?? caseStudy;
+          const primaryInternal = primary === caseStudy;
+          const primaryAttrs = primaryInternal ? { href: primary } : { href: primary, target: '_blank', rel: 'noreferrer' };
+          return (
+            <article class="project-card relative reveal" style={`--i: ${index}`}>
+              {primary && <a {...primaryAttrs} class="card-hit-area" aria-label={`Open ${project.data.title}`}></a>}
+              {project.data.metric && <span class="project-metric">{project.data.metric}</span>}
+              <h3>{primary ? <a class="ink-bleed-link" {...primaryAttrs}>{project.data.title} ↗</a> : project.data.title}</h3>
+              <ProjectLinks links={project.data.links} />
+              <p>{project.data.desc}</p>
+              <div class="project-tags">{project.data.tech.map((tag) => <span class="project-tag">{tag}</span>)}</div>
+            </article>
+          );
+        })}
     </div>
   </section>
 

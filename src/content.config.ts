@@ -9,7 +9,7 @@ const research = defineCollection({
     venue: z.string(),
     acronyms: z.array(z.string()).default([]),
     year: z.number(),
-    status: z.enum(['published', 'in-review', 'preprint']),
+    status: z.enum(['published', 'in-review', 'accepted', 'camera-ready', 'workshop', 'best-paper', 'preprint']).default('published'),
     authors: z.array(z.string()),
     abstract: z.string(),
     pdf: z.string().optional(),
@@ -24,7 +24,14 @@ const projects = defineCollection({
   schema: z.object({
     title: z.string(),
     desc: z.string(),
-    link: z.string(),
+    links: z
+      .object({
+        github: z.string().optional(),
+        demo: z.string().optional(),
+        appstore: z.string().optional(),
+        caseStudy: z.string().optional(),
+      })
+      .default({}),
     tech: z.array(z.string()).default([]),
     metric: z.string().optional(),
     featured: z.boolean().default(false),

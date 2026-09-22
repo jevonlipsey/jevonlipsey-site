@@ -2,7 +2,8 @@
 title: "Featherweight"
 tech: ["fastapi", "playwright", "vue.js", "sqlite"]
 desc: "Full-stack platform that transforms eBird raw sighting frequency data into seasonal observation-likelihood rankings for birders."
-link: "https://github.com/BrooktieFrogge/EBird_Hotspot_Ranker"
+links:
+  github: "https://github.com/BrooktieFrogge/EBird_Hotspot_Ranker"
 featured: true
 ---
 
